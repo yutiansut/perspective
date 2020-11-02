@@ -308,8 +308,7 @@ elseif(PSP_CPP_BUILD OR PSP_PYTHON_BUILD)
 	endif()
 
 	# Boost is a system dependency and must be present and built on the system.
-	find_package(Boost REQUIRED)
-
+	find_package(Boost COMPONENTS thread system REQUIRED)
 	if(NOT Boost_FOUND)
 		message(FATAL_ERROR "${Red}Boost could not be located${ColorReset}")
 	else()
@@ -650,8 +649,11 @@ elseif(PSP_CPP_BUILD OR PSP_PYTHON_BUILD)
 		# Link against minimal arrow static library
 		target_link_libraries(psp arrow)
 
+		target_link_libraries(psp Boost::thread)
+		target_link_libraries(binding Boost::thread)
+
 		target_link_libraries(psp tbb)
-		target_link_libraries(binding tbb)
+		target_link_libraries(binding tbb)		
 
 		target_link_libraries(binding psp)
 
