@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.7.2)
 project(psp)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 set(CMAKE_CXX_STANDARD 14)
@@ -214,7 +213,7 @@ if (PSP_WASM_BUILD)
 		rust_example
 		DOWNLOAD_COMMAND ""
 		CONFIGURE_COMMAND ""
-		BUILD_COMMAND cargo build COMMAND cargo build --target=wasm32-unknown-unknown
+		BUILD_COMMAND cargo build COMMAND cargo build --target=wasm32-unknown-emscripten
 		BINARY_DIR "${CMAKE_SOURCE_DIR}/../../rust/perspective"
 		INSTALL_COMMAND ""
 		LOG_BUILD ON)
@@ -273,7 +272,6 @@ if (PSP_WASM_BUILD)
 			-O3 \
 			-g0 \
 			-flto \
-			--closure 1 \
 			-s AGGRESSIVE_VARIABLE_ELIMINATION=1 \
 			")
 	endif()
@@ -612,8 +610,8 @@ if (PSP_WASM_BUILD)
 	target_link_libraries(perspective.async psp "${ASYNC_MODE_FLAGS}")
 
 	target_link_libraries(perspective.async
-    	debug "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-unknown/debug/librust_example.a"
-    	optimized "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-unknown/release/librust_example.a")
+    	debug "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-emscripten/debug/librust_example.a"
+    	optimized "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-emscripten/release/librust_example.a")
 	target_compile_definitions(perspective.async PRIVATE PSP_ENABLE_WASM=1)
 	set_target_properties(perspective.async PROPERTIES COMPILE_FLAGS "${ASYNC_MODE_FLAGS}")
 	set_target_properties(perspective.async PROPERTIES RUNTIME_OUTPUT_DIRECTORY "./build/")
