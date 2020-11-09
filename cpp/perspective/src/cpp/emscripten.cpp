@@ -1080,7 +1080,9 @@ namespace binding {
         std::shared_ptr<t_gnode> gnode;
         std::uint32_t offset;
 
+        std::cout << "calling hello world" << std::endl;
         hello_world();
+        std::cout << "called!" << std::endl;
 
         // If the Table has already been created, use it
         if (table_initialized) {
