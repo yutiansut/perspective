@@ -1,12 +1,55 @@
+/******************************************************************************
+ *
+ * Copyright (c) 2019, the Perspective Authors.
+ *
+ * This file is part of the Perspective library, distributed under the terms of
+ * the Apache License 2.0.  The full license can be found in the LICENSE file.
+ *
+ */
+
 #ifdef PSP_ENABLE_WASM
+
+#include <perspective/first.h>
+#include <perspective/base.h>
 
 extern "C" {
     struct CoolStruct {
         int x;
         int y;
     };
+
+    enum Value_Tag {
+        _Int,
+        _Float
+    };
+
+    struct _Int_Body {
+        std::int32_t _0;
+    };
+
+    struct _Float_Body {
+        double _0;
+    };
+
+    struct Value {
+        Value_Tag tag;
+
+        union {
+            _Int_Body _int;
+            _Float_Body _float;
+        };
+    };
+
+    struct RStruct {
+        const char* name;
+        Value value;
+    };
+
+    void data_free(RStruct* ptr);
+    RStruct* data_new();
+    RStruct* data_new_param(std::int32_t v);
+
     void hello_world();
-    *CoolStruct cool_function(int x, int y);
 }
 
 #endif
