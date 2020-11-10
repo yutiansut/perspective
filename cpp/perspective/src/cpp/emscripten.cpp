@@ -8,6 +8,7 @@
  */
 
 #include <perspective/emscripten.h>
+#include <perspective/rust_bindings.h>
 #include <perspective/arrow_loader.h>
 #include <perspective/arrow_writer.h>
 #include <arrow/csv/api.h>
@@ -17,11 +18,6 @@ using namespace perspective;
 
 namespace perspective {
 namespace binding {
-
-    extern "C" {
-        void hello_world();
-    }
-
 
     /******************************************************************************
      *
@@ -1081,6 +1077,9 @@ namespace binding {
         std::uint32_t offset;
 
         hello_world();
+        *CoolStruct cs = cool_function(2,3);
+        std::cout << cs->x << ", " << cs->y << std::endl; 
+        free(cs);
 
         // If the Table has already been created, use it
         if (table_initialized) {
