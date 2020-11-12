@@ -1076,6 +1076,8 @@ namespace binding {
         std::shared_ptr<t_gnode> gnode;
         std::uint32_t offset;
 
+        hello_world();
+
         // Create a struct in rust, allocate it on the heap, and return a
         // raw pointer with ownership of the heap object.
         RStruct* cs = data_new();
@@ -1098,9 +1100,6 @@ namespace binding {
         // Pass ownership back to rust in order to manually free.
         data_free(cs);
         data_free(cs2);
-
-        // data accessor
-        auto rda = RustDataAccessor(100);
 
         // If the Table has already been created, use it
         if (table_initialized) {

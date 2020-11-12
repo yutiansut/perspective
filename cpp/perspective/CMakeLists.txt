@@ -461,16 +461,16 @@ if (NOT PSP_PYTHON_BUILD)
 
 	# Add rust_example as a CMake target, and force it to always rebuild
 	# TODO: https://stackoverflow.com/a/51090545
-	ExternalProject_Add(
-		rust_example
-		DOWNLOAD_COMMAND ""
-		CONFIGURE_COMMAND ""
-		# Build the Rust project using cargo and the WASM emscripten target
-		BUILD_COMMAND cargo build COMMAND cargo build --target=wasm32-unknown-emscripten ${CARGO_RELEASE_FLAG}
-		# Find the rust project in rust/perspective
-		BINARY_DIR "${CMAKE_SOURCE_DIR}/../../rust/perspective"
-		INSTALL_COMMAND ""
-		BUILD_ALWAYS 1)
+	# ExternalProject_Add(
+	# 	rust_example
+	# 	DOWNLOAD_COMMAND ""
+	# 	CONFIGURE_COMMAND ""
+	# 	# Build the Rust project using cargo and the WASM emscripten target
+	# 	BUILD_COMMAND cargo build COMMAND cargo build --target=wasm32-unknown-emscripten ${CARGO_RELEASE_FLAG}
+	# 	# Find the rust project in rust/perspective
+	# 	BINARY_DIR "${CMAKE_SOURCE_DIR}/../../rust/perspective"
+	# 	INSTALL_COMMAND ""
+	# 	BUILD_ALWAYS 1)
 endif()
 
 #####################
@@ -614,15 +614,15 @@ if (PSP_WASM_BUILD)
 	add_executable(perspective.async src/cpp/emscripten.cpp)
 
 	# Create dependency of Example on rust_example
-	add_dependencies(rust_example arrow)
-	add_dependencies(perspective.async rust_example)
+	#add_dependencies(rust_example arrow)
+	#add_dependencies(perspective.async rust_example)
 
 	target_link_libraries(perspective.async psp "${ASYNC_MODE_FLAGS}")
 
 	# Link Emscripten binding to the Perspective example
 	target_link_libraries(perspective.async
-    	debug "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-emscripten/debug/librust_example.a"
-		optimized "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-emscripten/release/librust_example.a")
+		optimized "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-emscripten/debug/librust_example.a")
+		# optimized "${CMAKE_SOURCE_DIR}/../../rust/perspective/target/wasm32-unknown-emscripten/release/librust_example.a")
 
 	target_compile_definitions(perspective.async PRIVATE PSP_ENABLE_WASM=1)
 	set_target_properties(perspective.async PROPERTIES COMPILE_FLAGS "${ASYNC_MODE_FLAGS}")
