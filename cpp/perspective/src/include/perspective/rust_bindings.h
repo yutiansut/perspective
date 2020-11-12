@@ -11,6 +11,7 @@
 
 #include <perspective/first.h>
 #include <perspective/base.h>
+#include <perspective/scalar.h>
 
 extern "C" {
     struct CoolStruct {
@@ -50,6 +51,48 @@ extern "C" {
     RStruct* data_new_param(std::int32_t v);
 
     void hello_world();
+
+    // Data accessor
+    void* accessor_create(perspective::t_uindex length);
+    void accessor_destroy(void* accessor);
+}
+
+namespace perspective {
+    /**
+     * @brief A simple wrapper class for the `DataAccessor` defined in Rust.
+     * 
+     */
+    class RustDataAccessor {
+    public:
+        /**
+         * @brief Construct a data accessor with data of `length`.
+         * 
+         * @param length 
+         */
+        RustDataAccessor(t_uindex length);
+
+        /**
+         * @brief Destroy the data accessor - destructors need to be explictly
+         * implemented to destroy the object in Rust.
+         */
+        ~RustDataAccessor();
+
+        t_tscalar get(const std::string& column_name, t_uindex ridx);
+
+    private:
+        void* raw;
+    };
+
+    RustDataAccessor::RustDataAccessor(t_uindex length) {
+        raw = accessor_create(length);
+        if (raw == nullptr) {
+            PSP_COMPLAIN_AND_ABORT("Bad rust accessor ptr");
+        }
+    }
+
+    RustDataAccessor::~RustDataAccessor() {
+        accessor_destroy(raw);
+    }
 }
 
 #endif
