@@ -116,4 +116,4 @@ pub unsafe extern "C" fn accessor_destroy(accessor: *mut DataAccessor) {
 }
 
 #[no_mangle]
-pub extern "C" fn accessor_get(accessor: *mut DataAccessor, column_name: *const c_char, ridx: usize) {};
+pub extern "C" fn accessor_get(accessor: *mut DataAccessor, column_name: *const c_char, ridx: usize) {}

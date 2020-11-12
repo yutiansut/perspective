@@ -206,23 +206,6 @@ if (PSP_WASM_BUILD)
 	####################
 	# EMSCRIPTEN BUILD #
 	####################
-	include(ExternalProject)
-
-	# Build the rust project inside `build/rust`
-	set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/rust)
-
-	# Add rust_example as a CMake target, and force it to always rebuild
-	# TODO: https://stackoverflow.com/a/51090545 
-	ExternalProject_Add(
-		rust_example
-		DOWNLOAD_COMMAND ""
-		CONFIGURE_COMMAND ""
-		# Build the Rust project using cargo and the WASM emscripten target
-		BUILD_COMMAND cargo build COMMAND cargo build --target=wasm32-unknown-emscripten ${CARGO_RELEASE_FLAG}
-		# Find the rust project in rust/perspective
-		BINARY_DIR "${CMAKE_SOURCE_DIR}/../../rust/perspective"
-		INSTALL_COMMAND ""
-		BUILD_ALWAYS 1)
 
 	# Use Emscripten provided compiler toolchain
 	execute_process(COMMAND which emcc OUTPUT_VARIABLE EMCC)
@@ -470,6 +453,24 @@ if (NOT PSP_PYTHON_BUILD)
 		psp_build_message("${Cyan}Found Flatbuffers in ${FLATBUFFERS_INCLUDE_DIR}${ColorReset}")
 		include_directories( ${FLATBUFFERS_INCLUDE_DIR} )
 	endif()
+
+	include(ExternalProject)
+
+	# Build the rust project inside `build/rust`
+	set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/rust)
+
+	# Add rust_example as a CMake target, and force it to always rebuild
+	# TODO: https://stackoverflow.com/a/51090545
+	ExternalProject_Add(
+		rust_example
+		DOWNLOAD_COMMAND ""
+		CONFIGURE_COMMAND ""
+		# Build the Rust project using cargo and the WASM emscripten target
+		BUILD_COMMAND cargo build COMMAND cargo build --target=wasm32-unknown-emscripten ${CARGO_RELEASE_FLAG}
+		# Find the rust project in rust/perspective
+		BINARY_DIR "${CMAKE_SOURCE_DIR}/../../rust/perspective"
+		INSTALL_COMMAND ""
+		BUILD_ALWAYS 1)
 endif()
 
 #####################
@@ -613,6 +614,7 @@ if (PSP_WASM_BUILD)
 	add_executable(perspective.async src/cpp/emscripten.cpp)
 
 	# Create dependency of Example on rust_example
+	add_dependencies(rust_example arrow)
 	add_dependencies(perspective.async rust_example)
 
 	target_link_libraries(perspective.async psp "${ASYNC_MODE_FLAGS}")
