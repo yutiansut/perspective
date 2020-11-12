@@ -7,12 +7,22 @@
  *
  */
 
+// Define `accessor` as a module in this crate - the name must match that
+// of the file it references, i.e. `accessor.rs`.
+mod accessor;
+
+// Import 'cty' (ctypes), an external crate
+extern crate cty;
+
+// Use the following imports from the STL
 use std::boxed::Box;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-extern crate cty;
-
+// Use DataAccessor from `accessor` - the `crate` keyword means the current
+// crate.
+use crate::accessor::DataAccessor;
+use crate::accessor::make_data;
 
 #[repr(C)]
 pub struct RStruct {
@@ -85,3 +95,25 @@ pub extern "C" fn data_free(ptr: *mut RStruct) {
         Box::from_raw(ptr);
     }
 }
+
+#[no_mangle]
+pub extern "C" fn accessor_create(length: i32) -> *mut DataAccessor {
+    // Return a raw pointer to a new DataAccessor on the heap.
+    println!("Creating dataset of length {}", length);
+    let data = make_data(length);
+    println!("Returning raw ptr to data accessor");
+    let accessor = Box::new(DataAccessor{data});
+    return Box::into_raw(accessor);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn accessor_destroy(accessor: *mut DataAccessor) {
+    // Free the heap memory used by the accessor by allowing it to fall
+    // out of scope.
+    if !accessor.is_null() {
+        Box::from_raw(accessor);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn accessor_get(accessor: *mut DataAccessor, column_name: *const c_char, ridx: usize) {};

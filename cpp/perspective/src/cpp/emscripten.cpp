@@ -1097,6 +1097,10 @@ namespace binding {
 
         // Pass ownership back to rust in order to manually free.
         data_free(cs);
+        data_free(cs2);
+
+        // data accessor
+        auto rda = RustDataAccessor(100);
 
         // If the Table has already been created, use it
         if (table_initialized) {
