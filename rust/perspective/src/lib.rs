@@ -24,6 +24,10 @@ use std::os::raw::c_char;
 use crate::accessor::DataAccessor;
 use crate::accessor::make_data;
 
+
+use arrow::*;
+use arrow::array::{Array, PrimitiveArrayOps, UInt32Array};
+
 #[repr(C)]
 pub struct RStruct {
     name: *const c_char,
@@ -44,7 +48,13 @@ pub struct CoolStruct {
 
 #[no_mangle]
 pub extern "C" fn hello_world() {
-    println!("rust function called!");
+    let array = UInt32Array::from(vec![Some(1), None, Some(3)]);
+    println!("Created arrow array");
+    println!("Arrow array length: {}", array.len());
+    assert_eq!(array.len(), 3);
+    assert_eq!(array.value(0), 1);
+    assert_eq!(array.is_null(1), true);
+    println!("Passed checks for arrow array");
 }
 
 #[no_mangle]
