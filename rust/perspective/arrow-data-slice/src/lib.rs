@@ -7,25 +7,18 @@
  *
  */
 mod utils;
+mod arrow;
 
 use wasm_bindgen::prelude::*;
 use crate::utils::set_panic_hook;
 
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-#[wasm_bindgen]
-extern {
-    fn alert(s: &str);
-}
-
-// Called by our JS entry point to run the example.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
-    set_panic_hook();
-    alert("Hello, {{project-name}}!");
+    if cfg!(debug_assertions) {
+        set_panic_hook();
+    }
+
+    println!("Hello from rust!");
     Ok(())
 }
