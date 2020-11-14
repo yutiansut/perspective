@@ -466,7 +466,7 @@ if (NOT PSP_PYTHON_BUILD)
 		rust_arrow_data_slice
 		DOWNLOAD_COMMAND ""
 		CONFIGURE_COMMAND ""
-		BUILD_COMMAND wasm-pack build
+		BUILD_COMMAND wasm-pack build --target web
 		BINARY_DIR "${CMAKE_SOURCE_DIR}/../../rust/perspective/arrow-data-slice"
 		INSTALL_COMMAND ""
 		BUILD_ALWAYS 1)

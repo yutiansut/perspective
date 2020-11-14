@@ -14,73 +14,100 @@ use arrow::datatypes::Schema;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct ArrowDataSlice {
-    /// A struct that holds an Arrow record batch and allows it to be read
-    /// out into Javascript using its `get()` method.
-    record_batch: RecordBatch,
-    schema: Schema
+extern "C" {
+    // FIXME: remove log redefinition/find a way to pass log down to submodules
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
 }
 
-impl ArrowDataSlice {
-    /// Load an arrow binary from a raw pointer to a block of memory.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `ptr` - a pointer to a block of memory containing an arrow binary
-    /// * `length` - the length of the binary located at ptr
-    pub fn load(&mut self, ptr: *const u8, length: usize) {
-        unsafe {
-            let slice = std::slice::from_raw_parts(ptr, length);
-            let cursor = Cursor::new(slice);
+/// Load an arrow binary from a slice.
+pub fn load_arrow_slice(slice: &[u8]) {
+    // let slice = std::slice::from_raw_parts(ptr, length);
+    let cursor = Cursor::new(slice);
 
-            // Check whether the first 6 bytes are `ARROW1` - if so, then
-            // the arrow is a file format, otherwise it is a stream format.
-            let arrow_header = slice.get(0..6);
+    // Perspective generates streams - shortcut here
+    load_arrow_stream(cursor);
 
-            match arrow_header {
-                Some(v) => {
-                    match str::from_utf8(v) {
-                        Ok(v) => {
-                            match v {
-                                "ARROW1" => self.load_file(cursor),
-                                _ => self.load_stream(cursor)
-                            }
-                        },
-                        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-                    };
-                },
-                None => panic!("Could not get arrow header from buffer!")
-            }
-            
-        };
-            
-    }
+    // // Check whether the first 6 bytes are `ARROW1` - if so, then
+    // // the arrow is a file format, otherwise it is a stream format.
+    // let arrow_header = slice.get(0..6);
 
-    pub fn load_stream(&mut self, cursor: Cursor<&[u8]>) {
-        let reader = StreamReader::try_new(cursor);
-        match reader {
-            Ok(v) => {
-                let schema = v.schema();
-                // let batches = v.collect::<Result<_>>()?;
+    // match arrow_header {
+    //     Some(v) => {
+    //         match str::from_utf8(v) {
+    //             Ok(v) => {
+    //                 match v {
+    //                     "ARROW1" => load_arrow_file(cursor),
+    //                     _ => load_arrow_stream(cursor)
+    //                 }
+    //             },
+    //             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    //         };
+    //     },
+    //     None => panic!("Could not get arrow header from buffer!")
+    // }           
+}
+
+/// Load an arrow binary from a raw pointer to a block of memory.
+/// 
+/// # Arguments
+/// 
+/// * `ptr` - a pointer to a block of memory containing an arrow binary
+/// * `length` - the length of the binary located at ptr
+pub fn load_arrow_ptr(ptr: *const u8, length: usize) {
+    unsafe {
+        let slice = std::slice::from_raw_parts(ptr, length);
+        let cursor = Cursor::new(slice);
+
+        // Check whether the first 6 bytes are `ARROW1` - if so, then
+        // the arrow is a file format, otherwise it is a stream format.
+        let arrow_header = slice.get(0..6);
+
+        match arrow_header {
+            Some(v) => {
+                match str::from_utf8(v) {
+                    Ok(v) => {
+                        match v {
+                            "ARROW1" => load_arrow_file(cursor),
+                            _ => load_arrow_stream(cursor)
+                        }
+                    },
+                    Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+                };
             },
-            Err(e) => panic!("Could not read arrow stream: {}", e)
+            None => panic!("Could not get arrow header from buffer!")
         }
-    }
+        
+    };
+        
+}
 
-    pub fn load_file(&mut self, cursor: Cursor<&[u8]>) {
-        let reader = FileReader::try_new(cursor);
-        match reader {
-            Ok(v) => {
-                let schema = v.schema();
-                // let batches = v.collect::<Result<_>>()?;
-            },
-            Err(e) => panic!("Could not read arrow file: {}", e)
-        }
+fn load_arrow_stream(cursor: Cursor<&[u8]>) {
+    let reader = StreamReader::try_new(cursor);
+    match reader {
+        Ok(v) => {
+            let schema = v.schema();
+            log(format!("Schema from Rust StreamReader: {}", schema).as_str());
+            // let batches = v.collect::<Result<_>>()?;
+        },
+        Err(e) => panic!("Could not read arrow stream: {}", e)
+    }
+}
+
+fn load_arrow_file(cursor: Cursor<&[u8]>) {
+    let reader = FileReader::try_new(cursor);
+    match reader {
+        Ok(v) => {
+            let schema = v.schema();
+            println!("Schema from FileReader: {}", schema);
+            // let batches = v.collect::<Result<_>>()?;
+        },
+        Err(e) => panic!("Could not read arrow file: {}", e)
     }
 }
 
 #[wasm_bindgen]
-pub fn get_from_arrow(arrow: &ArrowDataSlice, column_name: &str, ridx: usize) -> JsValue {
+pub fn get_from_arrow(column_name: &str, ridx: usize) -> JsValue {
     println!("Returning JS null");
     JsValue::NULL
 }
