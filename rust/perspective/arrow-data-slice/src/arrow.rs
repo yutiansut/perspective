@@ -6,14 +6,10 @@
  * the Apache License 2.0.  The full license can be found in the LICENSE file.
  *
  */
-use std::any::Any;
-use std::sync::Arc;
 use std::str;
 use std::io::Cursor;
 use std::collections::HashMap;
-use arrow::error::{ArrowError, Result};
 use arrow::array::*;
-use arrow::datatypes::Schema;
 use arrow::ipc::reader::{StreamReader};
 use arrow::record_batch::RecordBatch;
 use wasm_bindgen::prelude::*;
@@ -47,8 +43,11 @@ pub fn load_arrow_stream(buffer: Box<[u8]>) {
     let fields = schema.fields();
 
     for accessor in accessors {
-        let column = &accessor.data["d"];
-        log(format!("float64 copied into vec: {:?}", column).as_str());
+        for field in fields {
+            let name = field.name();
+            let column = &accessor.data.get(name);
+            log(format!("{}: {:?}", name, column).as_str());
+        }
     }
 }
 
@@ -75,36 +74,54 @@ pub fn convert_record_batch(batch: RecordBatch) -> Box<ArrowAccessor> {
                 let v = slice.to_vec();
                 converted.insert(name, Box::new(v));
             };
-
-            for j in 0..result.len() {
-                log(format!("Float64Array {}", result.value(j)).as_str());
-            }
         } else if let Some(result) = col_any.downcast_ref::<Int64Array>() {
-            for j in 0..result.len() {
-                log(format!("Int64Array {}", result.value(j)).as_str());
-            }
+            let values_ptr: *const i64 = result.raw_values();
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(values_ptr, result.len());
+                let v = slice.to_vec();
+                log(format!("i64 copied into vec: {:?}", v).as_str());
+            };
         } else if let Some(result) = col_any.downcast_ref::<Int32Array>() {
-            for j in 0..result.len() {
-                log(format!("Int32Array {}", result.value(j)).as_str());
-            }
+            let values_ptr: *const i32 = result.raw_values();
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(values_ptr, result.len());
+                let v = slice.to_vec();
+                log(format!("i32 copied into vec: {:?}", v).as_str());
+            };
         } else if let Some(result) = col_any.downcast_ref::<Date32Array>() {
-            for j in 0..result.len() {
-                log(format!("Date32Array {}", result.value(j)).as_str());
-            }
+            let values_ptr: *const i32 = result.raw_values();
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(values_ptr, result.len());
+                let v = slice.to_vec();
+                log(format!("date32 copied into vec: {:?}", v).as_str());
+            };
         } else if let Some(result) = col_any.downcast_ref::<TimestampMillisecondArray>() {
-            for j in 0..result.len() {
-                log(format!("TimestampMillisecondArray {}", result.value(j)).as_str());
-            }
+            let values_ptr: *const i64 = result.raw_values();
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(values_ptr, result.len());
+                let v = slice.to_vec();
+                log(format!("timestamp copied into vec: {:?}", v).as_str());
+            };
         } else if let Some(result) = col_any.downcast_ref::<BooleanArray>() {
-            for j in 0..result.len() {
-                log(format!("BooleanArray {}", result.value(j)).as_str());
-            }
+            let values_ptr: *const bool = result.raw_values();
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(values_ptr, result.len());
+                let v = slice.to_vec();
+                log(format!("boolean copied into vec: {:?}", v).as_str());
+            };
         } else if let Some(result) = col_any.downcast_ref::<Int32DictionaryArray>() {
             if let Some(strings) = result.values().as_any().downcast_ref::<StringArray>() {
+                let mut string_vec: Vec<String> = Vec::new();
                 for key in result.keys() {
                     let k = key.unwrap();
-                    log(format!("int32dict {}", strings.value(k as usize)).as_str());
+                    string_vec.push(String::from(strings.value(k as usize)));
                 }
+                log(format!("String copied into vec: {:?}", string_vec).as_str());
             }
         }
     }
