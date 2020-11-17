@@ -11,6 +11,7 @@ mod arrow;
 
 use wasm_bindgen::prelude::*;
 
+use crate::arrow::ArrowAccessor;
 use crate::arrow::load_arrow_stream;
 use crate::utils::set_panic_hook;
 
@@ -21,7 +22,25 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn load_arrow(buffer: Box<[u8]>) {
+pub fn load_arrow(buffer: Box<[u8]>) -> *const ArrowAccessor {
     set_panic_hook();
-    load_arrow_stream(buffer);
+    let accessor = load_arrow_stream(buffer);
+    Box::into_raw(accessor)
+}
+
+// TODO: try to pass some sort of wrapper struct that has these methods
+// implemented to return JSValues, but without having to deal with passing
+// the underlying recordbatch/schema etc. from arrow.
+#[wasm_bindgen]
+pub fn accessor_num_batches(accessor: *const ArrowAccessor) -> usize {
+    unsafe {
+        return accessor.as_ref().unwrap().num_batches()
+    }
+}
+
+#[wasm_bindgen]
+pub fn accessor_contains_column(accessor: *const ArrowAccessor, name: &str) -> bool {
+    unsafe {
+        return accessor.as_ref().unwrap().contains_column(name)
+    }
 }

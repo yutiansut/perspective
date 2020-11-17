@@ -11,7 +11,7 @@
 
 <body>
     <script type="module">
-        import init, { load_arrow } from './pkg/arrow_data_slice.js';
+        import init, { load_arrow, accessor_num_batches, accessor_contains_column } from './pkg/arrow_data_slice.js';
 
         async function run() {
             await init();
@@ -26,7 +26,11 @@
 
             const arrow1 = await table.view().to_arrow();
             console.log(`arrow1 Bytelength in JS: ${arrow1.byteLength}`);
-            load_arrow(new Uint8Array(arrow1));
+            let accessor = load_arrow(new Uint8Array(arrow1));
+            console.log(accessor);
+            console.log(accessor_num_batches(accessor));
+            console.log(accessor_contains_column(accessor, "a"));
+            console.log(accessor_contains_column(accessor, "asd"));
 
             const table2 = worker.table({
                 a: "integer",
