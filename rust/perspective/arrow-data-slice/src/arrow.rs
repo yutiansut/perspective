@@ -25,14 +25,15 @@ extern "C" {
     fn log(s: &str);
 }
 
-pub struct ArrowAccessor<'a> {
-    data: HashMap<String, Box<&'a dyn Array>>
+pub struct ArrowAccessor {
+    data: HashMap<String, Box<Vec<f64>>>
 }
 
 /// Load an arrow binary in stream format.
 pub fn load_arrow_stream(buffer: Box<[u8]>) {
     let cursor = Cursor::new(buffer);
     let reader = StreamReader::try_new(cursor).unwrap();
+    let schema = reader.schema();
     let mut accessors: Vec<Box<ArrowAccessor>> = Vec::new();
 
     reader.for_each(|batch| {
@@ -42,25 +43,39 @@ pub fn load_arrow_stream(buffer: Box<[u8]>) {
             }, Err(err) => log(format!("{}", err).as_str())
         }
     });
+
+    let fields = schema.fields();
+
+    for accessor in accessors {
+        let column = &accessor.data["d"];
+        log(format!("float64 copied into vec: {:?}", column).as_str());
+    }
 }
 
-pub fn convert_record_batch<'a>(batch: RecordBatch) -> Box<ArrowAccessor<'a>> {
+pub fn convert_record_batch(batch: RecordBatch) -> Box<ArrowAccessor> {
     let schema = batch.schema();
     let num_columns: usize = batch.num_columns();
     let num_rows: usize = batch.num_rows();
 
     log(format!("{} x {}", num_columns, num_rows).as_str());
 
-    let mut converted_data: HashMap<String, Box<&dyn Array>> = HashMap::new();
+    // let mut converted_data: HashMap<String, Box<&dyn Array>> = HashMap::new();
+    let mut converted: HashMap<String, Box<Vec<f64>>> = HashMap::new();
 
     for i in 0..num_columns {
         let col = batch.column(i);
         let col_any = col.as_any();
-
         let name: String = schema.field(i).name().clone();
 
         if let Some(result) = col_any.downcast_ref::<Float64Array>() {
-            converted_data.insert(name, Box::new(result));
+            let values_ptr: *const f64 = result.raw_values();
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(values_ptr, result.len());
+                let v = slice.to_vec();
+                converted.insert(name, Box::new(v));
+            };
+
             for j in 0..result.len() {
                 log(format!("Float64Array {}", result.value(j)).as_str());
             }
@@ -95,7 +110,7 @@ pub fn convert_record_batch<'a>(batch: RecordBatch) -> Box<ArrowAccessor<'a>> {
     }
 
     let accessor = ArrowAccessor {
-        data: converted_data
+        data: converted
     };
 
     return Box::new(accessor);
