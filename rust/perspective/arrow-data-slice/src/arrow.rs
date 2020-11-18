@@ -50,7 +50,6 @@ impl ArrowColumn {
     }
 }
 
-
 impl fmt::Display for ArrowColumn {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}: {:?}\n", self.name, self.data)

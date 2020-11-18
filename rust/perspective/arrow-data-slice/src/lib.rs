@@ -8,6 +8,7 @@
  */
 mod utils;
 mod arrow;
+mod arrow_ref;
 
 use wasm_bindgen::prelude::*;
 
@@ -34,7 +35,6 @@ pub fn accessor_pprint(accessor: *const ArrowAccessor) {
         log(format!("{}", accessor.as_ref().unwrap()).as_str())
     }
 }
-
 
 #[wasm_bindgen]
 pub fn accessor_contains_column(accessor: *const ArrowAccessor, name: &str) -> bool {
