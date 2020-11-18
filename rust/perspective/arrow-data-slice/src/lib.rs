@@ -6,14 +6,14 @@
  * the Apache License 2.0.  The full license can be found in the LICENSE file.
  *
  */
-mod utils;
+mod api;
 mod arrow;
-mod arrow_ref;
+mod utils;
 
 use wasm_bindgen::prelude::*;
 
 use crate::arrow::ArrowAccessor;
-use crate::arrow::load_arrow_stream;
+use crate::api::load_arrow_stream;
 use crate::utils::set_panic_hook;
 
 #[wasm_bindgen]
@@ -33,13 +33,6 @@ pub fn load_arrow(buffer: Box<[u8]>) -> *const ArrowAccessor {
 pub fn accessor_pprint(accessor: *const ArrowAccessor) {
     unsafe {
         log(format!("{}", accessor.as_ref().unwrap()).as_str())
-    }
-}
-
-#[wasm_bindgen]
-pub fn accessor_contains_column(accessor: *const ArrowAccessor, name: &str) -> bool {
-    unsafe {
-        return accessor.as_ref().unwrap().contains_column(name)
     }
 }
 
