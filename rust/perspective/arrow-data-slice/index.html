@@ -11,28 +11,13 @@
 
 <body>
     <script type="module">
-        import init, { load_arrow, accessor_num_batches, accessor_contains_column } from './pkg/arrow_data_slice.js';
+        import init, { load_arrow, accessor_pprint } from './pkg/arrow_data_slice.js';
 
         async function run() {
             await init();
             const worker = perspective.worker();
+
             const table = worker.table({
-                a: [1, 2, 3, 4],
-                b: ["a", "b", "a", "c"],
-                c: [new Date(), new Date(), new Date(), new Date()],
-                d: [1.5, 2.5, 3.5, 4.5],
-                e: [true, false, true, false]
-            });
-
-            const arrow1 = await table.view().to_arrow();
-            console.log(`arrow1 Bytelength in JS: ${arrow1.byteLength}`);
-            let accessor = load_arrow(new Uint8Array(arrow1));
-            console.log(accessor);
-            console.log(accessor_num_batches(accessor));
-            console.log(accessor_contains_column(accessor, "a"));
-            console.log(accessor_contains_column(accessor, "asd"));
-
-            const table2 = worker.table({
                 a: "integer",
                 b: "string",
                 c: "datetime",
@@ -41,18 +26,26 @@
                 f: "boolean"
             });
 
-            table2.update({
-                a: [1, 2, 3, 4],
-                b: ["a", "b", "c", "d"],
-                c: [new Date(), new Date(), new Date(), new Date()],
-                d: [new Date(), new Date(), new Date(), new Date()],
-                e: [1.5, 2.5, 3.5, 4.5],
-                f: [true, false, true, false]
+            table.update({
+                a: [1, 2, 3, null, 4],
+                b: ["a", null, "b", "c", "d"],
+                c: [null, new Date(), new Date(), new Date(), new Date()],
+                d: [new Date(), null, new Date(), new Date(), new Date()],
+                e: [1.5, 2.5, null, 3.5, 4.5],
+                f: [true, false, true, null, false]
             });
 
-            // const arrow2 = await table2.view().to_arrow();
-            // console.log(`arrow2 Bytelength in JS: ${arrow2.byteLength}`);
-            // load_arrow(new Uint8Array(arrow2));
+            const view = table.view();
+            const arrow = await view.to_arrow();
+            let start = performance.now();
+            let accessor = load_arrow(new Uint8Array(arrow));
+            console.log(`accessor took ${performance.now() - start} seconds`);
+            accessor_pprint(accessor);
+
+
+            let start2 = performance.now();
+            await view.to_json();
+            console.log(`to_json() took ${performance.now() - start2} seconds`);
         };
         run();
     </script>

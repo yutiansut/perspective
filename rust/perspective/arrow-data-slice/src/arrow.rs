@@ -6,11 +6,12 @@
  * the Apache License 2.0.  The full license can be found in the LICENSE file.
  *
  */
+use std::fmt;
 use std::str;
 use std::io::Cursor;
-// use std::collections::HashMap;
-// use arrow::array::*;
-use arrow::datatypes::{Schema};
+use std::collections::HashMap;
+use arrow::array;
+use arrow::datatypes::{DataType, Schema};
 use arrow::ipc::reader::{StreamReader};
 use arrow::record_batch::RecordBatch;
 use wasm_bindgen::prelude::*;
@@ -22,23 +23,138 @@ extern "C" {
     fn log(s: &str);
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum ColumnData {
+    DTYPE_INT32(Vec<i32>),
+    DTYPE_INT64(Vec<i64>),
+    DTYPE_FLOAT64(Vec<f64>),
+    DTYPE_TIME(Vec<i64>),
+    DTYPE_DATE(Vec<i32>),
+    DTYPE_BOOL(Vec<bool>),
+    DTYPE_STR(Vec<Option<String>>),
+}
+
+pub struct ArrowColumn {
+    name: String,
+    dtype: DataType,
+    data: ColumnData
+}
+
+impl ArrowColumn {
+    pub fn new(name: &str, dtype: DataType, data: ColumnData) -> Self {
+        ArrowColumn{
+            name: String::from(name),
+            dtype,
+            data
+        }
+    }
+}
+
+
+impl fmt::Display for ArrowColumn {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {:?}\n", self.name, self.data)
+    }
+}
+
+
 pub struct ArrowAccessor {
-    // TODO: figure out the way to access underlying data
-    batches: Vec<Box<RecordBatch>>,
-    schema: Schema
+    schema: Schema,
+    data: HashMap<String, ArrowColumn>,
 }
 
 impl ArrowAccessor {
 
-    pub fn num_batches(&self) -> usize {
-        log(format!("[Rust] {} record batches in accessor", self.batches.len()).as_str());    
-        self.batches.len()
+    pub fn new(batch: Box<RecordBatch>, schema: Schema) -> Self {
+        let num_columns = batch.num_columns();
+        let mut data: HashMap<String, ArrowColumn> = HashMap::new();
+
+        for cidx in 0..num_columns {
+            let field = schema.field(cidx);
+            let name = field.name().clone();
+            let dtype = field.data_type().clone();
+            let col = batch.column(cidx);
+            let col_any = col.as_any();
+
+            // Construct our wrapper structures
+            let mut column_data: Option<ColumnData> = None;
+
+            if let Some(result) = col_any.downcast_ref::<array::Float64Array>() {
+                let values_ptr: *const f64 = result.raw_values();
+    
+                let slice = unsafe {
+                    std::slice::from_raw_parts(values_ptr, result.len())
+                };
+
+                column_data = Some(ColumnData::DTYPE_FLOAT64(slice.to_vec()));
+            } else if let Some(result) = col_any.downcast_ref::<array::Int64Array>() {
+                let values_ptr: *const i64 = result.raw_values();
+    
+                let slice = unsafe {
+                    std::slice::from_raw_parts(values_ptr, result.len())
+                };
+
+                column_data = Some(ColumnData::DTYPE_INT64(slice.to_vec()));
+            } else if let Some(result) = col_any.downcast_ref::<array::Int32Array>() {
+                let values_ptr: *const i32 = result.raw_values();
+    
+                let slice = unsafe {
+                    std::slice::from_raw_parts(values_ptr, result.len())
+                };
+
+                column_data = Some(ColumnData::DTYPE_INT32(slice.to_vec()));
+            } else if let Some(result) = col_any.downcast_ref::<array::Date32Array>() {
+                let values_ptr: *const i32 = result.raw_values();
+    
+                let slice = unsafe {
+                    std::slice::from_raw_parts(values_ptr, result.len())
+                };
+
+                column_data = Some(ColumnData::DTYPE_DATE(slice.to_vec()));
+            } else if let Some(result) = col_any.downcast_ref::<array::TimestampMillisecondArray>() {
+                let values_ptr: *const i64 = result.raw_values();
+    
+                let slice = unsafe {
+                    std::slice::from_raw_parts(values_ptr, result.len())
+                };
+
+                column_data = Some(ColumnData::DTYPE_TIME(slice.to_vec()));
+            } else if let Some(result) = col_any.downcast_ref::<array::BooleanArray>() {
+                let values_ptr: *const bool = result.raw_values();
+    
+                let slice = unsafe {
+                    std::slice::from_raw_parts(values_ptr, result.len())
+                };
+
+                column_data = Some(ColumnData::DTYPE_BOOL(slice.to_vec()));
+            } else if let Some(result) = col_any.downcast_ref::<array::Int32DictionaryArray>() {
+                // Materialize the strings into one Vector of heap-owned Strings
+                if let Some(strings) = result.values().as_any().downcast_ref::<array::StringArray>() {
+                    let mut string_values: Vec<Option<String>> = Vec::new();
+                    for key in result.keys() {
+                        match key {
+                            Some(k) => string_values.push(Some(String::from(strings.value(k as usize)))),
+                            None => string_values.push(None)
+                        }
+                    }
+                    column_data = Some(ColumnData::DTYPE_STR(string_values));
+                }
+            }
+
+            let converted = ArrowColumn::new(name.as_str(), dtype, column_data.unwrap());
+            data.insert(name, converted);
+        }
+
+        ArrowAccessor {
+            schema,
+            data
+        }
     }
 
     // TODO: use the schema from Perspective for column names, or have the
     // arrow accessor hold its own schema from rust?
-    pub fn contains_column(&self, name: &str) -> bool {
-        match self.schema.field_with_name(name) {
+    pub fn contains_column(&self, column_name: &str) -> bool {
+        match self.schema.field_with_name(column_name) {
             Ok(_) => true,
             Err(_) => false
         }
@@ -66,6 +182,17 @@ impl ArrowAccessor {
     // }
 }
 
+impl fmt::Display for ArrowAccessor {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ArrowAccessor\n");
+        write!(f, "--------------\n");
+        for column in self.data.values() {
+            write!(f, "{}", column);
+        }
+        write!(f, "")
+    }
+}
+
 /// Load an arrow binary in stream format.
 pub fn load_arrow_stream(buffer: Box<[u8]>) -> Box<ArrowAccessor> {
     let cursor = Cursor::new(buffer);
@@ -84,94 +211,10 @@ pub fn load_arrow_stream(buffer: Box<[u8]>) -> Box<ArrowAccessor> {
         Box::new(batch.unwrap())
     }).collect::<Vec<Box<RecordBatch>>>();
 
-    log(format!("[Rust] {} record batches loaded", batches.len()).as_str());
-
-    let accessor = ArrowAccessor {
-        batches,
-        schema
-    };
-
-    return Box::new(accessor);
+    if let [batch] = &batches[..] {
+        log(format!("[Rust] {} record batches loaded", batches.len()).as_str());
+        Box::new(ArrowAccessor::new(batch.clone(), schema))
+    } else {
+        panic!("Should only be 1 record batch to load.")
+    }
 }
-
-// pub fn convert_record_batch(batch: RecordBatch) -> Box<ArrowAccessor> {
-//     let schema = batch.schema();
-//     let num_columns: usize = batch.num_columns();
-//     let num_rows: usize = batch.num_rows();
-
-//     log(format!("{} x {}", num_columns, num_rows).as_str());
-
-//     // let mut converted_data: HashMap<String, Box<&dyn Array>> = HashMap::new();
-//     let mut converted: HashMap<String, Box<Vec<f64>>> = HashMap::new();
-
-//     for i in 0..num_columns {
-//         let col = batch.column(i);
-//         let col_any = col.as_any();
-//         let name: String = schema.field(i).name().clone();
-
-//         if let Some(result) = col_any.downcast_ref::<Float64Array>() {
-//             let values_ptr: *const f64 = result.raw_values();
-
-//             unsafe {
-//                 let slice = std::slice::from_raw_parts(values_ptr, result.len());
-//                 let v = slice.to_vec();
-//                 converted.insert(name, Box::new(v));
-//             };
-//         } else if let Some(result) = col_any.downcast_ref::<Int64Array>() {
-//             let values_ptr: *const i64 = result.raw_values();
-
-//             unsafe {
-//                 let slice = std::slice::from_raw_parts(values_ptr, result.len());
-//                 let v = slice.to_vec();
-//                 log(format!("i64 copied into vec: {:?}", v).as_str());
-//             };
-//         } else if let Some(result) = col_any.downcast_ref::<Int32Array>() {
-//             let values_ptr: *const i32 = result.raw_values();
-
-//             unsafe {
-//                 let slice = std::slice::from_raw_parts(values_ptr, result.len());
-//                 let v = slice.to_vec();
-//                 log(format!("i32 copied into vec: {:?}", v).as_str());
-//             };
-//         } else if let Some(result) = col_any.downcast_ref::<Date32Array>() {
-//             let values_ptr: *const i32 = result.raw_values();
-
-//             unsafe {
-//                 let slice = std::slice::from_raw_parts(values_ptr, result.len());
-//                 let v = slice.to_vec();
-//                 log(format!("date32 copied into vec: {:?}", v).as_str());
-//             };
-//         } else if let Some(result) = col_any.downcast_ref::<TimestampMillisecondArray>() {
-//             let values_ptr: *const i64 = result.raw_values();
-
-//             unsafe {
-//                 let slice = std::slice::from_raw_parts(values_ptr, result.len());
-//                 let v = slice.to_vec();
-//                 log(format!("timestamp copied into vec: {:?}", v).as_str());
-//             };
-//         } else if let Some(result) = col_any.downcast_ref::<BooleanArray>() {
-//             let values_ptr: *const bool = result.raw_values();
-
-//             unsafe {
-//                 let slice = std::slice::from_raw_parts(values_ptr, result.len());
-//                 let v = slice.to_vec();
-//                 log(format!("boolean copied into vec: {:?}", v).as_str());
-//             };
-//         } else if let Some(result) = col_any.downcast_ref::<Int32DictionaryArray>() {
-//             if let Some(strings) = result.values().as_any().downcast_ref::<StringArray>() {
-//                 let mut string_vec: Vec<String> = Vec::new();
-//                 for key in result.keys() {
-//                     let k = key.unwrap();
-//                     string_vec.push(String::from(strings.value(k as usize)));
-//                 }
-//                 log(format!("String copied into vec: {:?}", string_vec).as_str());
-//             }
-//         }
-//     }
-
-//     let accessor = ArrowAccessor {
-//         data: converted
-//     };
-
-//     return Box::new(accessor);
-// }

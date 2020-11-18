@@ -28,19 +28,23 @@ pub fn load_arrow(buffer: Box<[u8]>) -> *const ArrowAccessor {
     Box::into_raw(accessor)
 }
 
-// TODO: try to pass some sort of wrapper struct that has these methods
-// implemented to return JSValues, but without having to deal with passing
-// the underlying recordbatch/schema etc. from arrow.
 #[wasm_bindgen]
-pub fn accessor_num_batches(accessor: *const ArrowAccessor) -> usize {
+pub fn accessor_pprint(accessor: *const ArrowAccessor) {
     unsafe {
-        return accessor.as_ref().unwrap().num_batches()
+        log(format!("{}", accessor.as_ref().unwrap()).as_str())
     }
 }
+
 
 #[wasm_bindgen]
 pub fn accessor_contains_column(accessor: *const ArrowAccessor, name: &str) -> bool {
     unsafe {
         return accessor.as_ref().unwrap().contains_column(name)
     }
+}
+
+#[wasm_bindgen]
+pub fn accessor_get(_accessor: *const ArrowAccessor, column_name: &str, ridx: usize) -> JsValue {
+    log(format!("[Rust] called get() for {}[{}]", column_name, ridx).as_str());
+    JsValue::NULL
 }
