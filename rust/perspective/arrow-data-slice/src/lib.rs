@@ -37,7 +37,43 @@ pub fn accessor_pprint(accessor: *const ArrowAccessor) {
 }
 
 #[wasm_bindgen]
-pub fn accessor_get(_accessor: *const ArrowAccessor, column_name: &str, ridx: usize) -> JsValue {
-    log(format!("[Rust] called get() for {}[{}]", column_name, ridx).as_str());
-    JsValue::NULL
+pub fn accessor_get(accessor: *const ArrowAccessor, column_name: &str, ridx: usize) -> JsValue {
+    let accessor = unsafe { accessor.as_ref().unwrap() };
+    if !accessor.is_valid(column_name, ridx) {
+        JsValue::NULL
+    } else {
+        let schema = &accessor.schema;
+        let dtype = &schema[column_name];
+        match &dtype[..] {
+            "i32" => JsValue::from(accessor.get_i32(column_name, ridx)),
+            "i64" => {
+                match accessor.get_i64(column_name, ridx) {
+                    Some(num) => JsValue::from(num as i32),
+                    None => JsValue::NULL
+                }
+            },
+            "f64" => JsValue::from(accessor.get_f64(column_name, ridx)),
+            "date" => JsValue::NULL,
+            "datetime" => JsValue::NULL,
+            "bool" => JsValue::from(accessor.get_bool(column_name, ridx).unwrap()),
+            "string" => JsValue::from(accessor.get_string(column_name, ridx).unwrap()),
+            _ => panic!("Unexpected dtype: {}", dtype)
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn accessor_print_schema(accessor: *const ArrowAccessor) {
+    unsafe {
+        let schema = accessor.as_ref().unwrap().schema.clone();
+        log(format!("{:?}", schema).as_str())
+    }
+}
+
+#[wasm_bindgen]
+pub fn accessor_print_column_names(accessor: *const ArrowAccessor) {
+    unsafe {
+        let column_names = accessor.as_ref().unwrap().column_names.clone();
+        log(format!("{:?}", column_names).as_str())
+    }
 }

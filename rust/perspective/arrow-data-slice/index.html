@@ -11,7 +11,7 @@
 
 <body>
     <script type="module">
-        import init, { load_arrow, accessor_pprint } from './pkg/arrow_data_slice.js';
+        import init, { load_arrow, accessor_pprint, accessor_print_schema, accessor_print_column_names, accessor_get } from './pkg/arrow_data_slice.js';
 
         async function run() {
             await init();
@@ -39,9 +39,25 @@
             const arrow = await view.to_arrow();
             let start = performance.now();
             let accessor = load_arrow(new Uint8Array(arrow));
-            console.log(`accessor took ${performance.now() - start} seconds`);
-            accessor_pprint(accessor);
 
+            let num_columns = await view.num_columns();
+            let num_rows = await view.num_rows();
+            let cols = await view.column_paths();
+
+            let reconstructed = {};
+
+            for (let col of cols) {
+                reconstructed[col] = [];
+                for (let j = 0; j < num_rows; j++) {
+                    reconstructed[col].push(accessor_get(accessor, col, j));
+                }
+            }
+            console.log(`accessor took ${performance.now() - start} seconds`);
+
+            console.log(reconstructed);
+            accessor_pprint(accessor);
+            accessor_print_schema(accessor);
+            accessor_print_column_names(accessor);
 
             let start2 = performance.now();
             await view.to_json();

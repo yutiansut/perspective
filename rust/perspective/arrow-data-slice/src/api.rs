@@ -12,7 +12,7 @@ use arrow::ipc::reader::{StreamReader};
 use arrow::record_batch::RecordBatch;
 use wasm_bindgen::prelude::*;
 
-use crate::arrow_ref::ArrowAccessor;
+use crate::arrow::ArrowAccessor;
 
 #[wasm_bindgen]
 extern "C" {
