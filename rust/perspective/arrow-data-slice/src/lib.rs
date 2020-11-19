@@ -10,11 +10,13 @@ mod api;
 mod arrow;
 mod utils;
 
+use js_sys::*;
+use chrono::Datelike;
 use wasm_bindgen::prelude::*;
 
 use crate::arrow::ArrowAccessor;
 use crate::api::load_arrow_stream;
-use crate::utils::set_panic_hook;
+// se crate::utils::set_panic_hook;
 
 #[wasm_bindgen]
 extern "C" {
@@ -23,21 +25,14 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn load_arrow(buffer: Box<[u8]>) -> *const ArrowAccessor {
-    set_panic_hook();
+pub fn make_rust_accessor(buffer: Box<[u8]>) -> *const ArrowAccessor {
+    // set_panic_hook();
     let accessor = load_arrow_stream(buffer);
     Box::into_raw(accessor)
 }
 
 #[wasm_bindgen]
-pub fn accessor_pprint(accessor: *const ArrowAccessor) {
-    unsafe {
-        log(format!("{}", accessor.as_ref().unwrap()).as_str())
-    }
-}
-
-#[wasm_bindgen]
-pub fn accessor_get(accessor: *const ArrowAccessor, column_name: &str, ridx: usize) -> JsValue {
+pub fn get_from_rust_accessor(accessor: *const ArrowAccessor, column_name: &str, ridx: usize) -> JsValue {
     let accessor = unsafe { accessor.as_ref().unwrap() };
     if !accessor.is_valid(column_name, ridx) {
         JsValue::NULL
@@ -53,27 +48,24 @@ pub fn accessor_get(accessor: *const ArrowAccessor, column_name: &str, ridx: usi
                 }
             },
             "f64" => JsValue::from(accessor.get_f64(column_name, ridx)),
-            "date" => JsValue::NULL,
-            "datetime" => JsValue::NULL,
+            "date" => {
+                match accessor.get_date(column_name, ridx) {
+                    Some(value) => JsValue::from(Date::new_with_year_month_day(value.year() as u32, value.month0() as i32, value.day() as i32)),
+                    None => JsValue::NULL
+                }  
+            },
+            "datetime" => {
+                match accessor.get_datetime(column_name, ridx) {
+                    Some(value) => {
+                        let timestamp = JsValue::from(value as f64);
+                        JsValue::from(Date::new(&timestamp))
+                    }
+                    None => JsValue::NULL
+                }
+            }
             "bool" => JsValue::from(accessor.get_bool(column_name, ridx).unwrap()),
             "string" => JsValue::from(accessor.get_string(column_name, ridx).unwrap()),
             _ => panic!("Unexpected dtype: {}", dtype)
         }
-    }
-}
-
-#[wasm_bindgen]
-pub fn accessor_print_schema(accessor: *const ArrowAccessor) {
-    unsafe {
-        let schema = accessor.as_ref().unwrap().schema.clone();
-        log(format!("{:?}", schema).as_str())
-    }
-}
-
-#[wasm_bindgen]
-pub fn accessor_print_column_names(accessor: *const ArrowAccessor) {
-    unsafe {
-        let column_names = accessor.as_ref().unwrap().column_names.clone();
-        log(format!("{:?}", column_names).as_str())
     }
 }

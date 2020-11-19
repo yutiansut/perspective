@@ -15,14 +15,6 @@ use chrono::naive::NaiveDateTime;
 use arrow::array::*;
 use arrow::datatypes::*;
 use arrow::record_batch::RecordBatch;
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-extern "C" {
-    // FIXME: remove log redefinition/find a way to pass log down to submodules
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
 
 pub struct ArrowAccessor {
     pub schema: HashMap<String, String>,
@@ -31,7 +23,7 @@ pub struct ArrowAccessor {
 }
 
 impl ArrowAccessor {
-    pub fn new(batch: Box<RecordBatch>, batch_schema: Schema) -> Self {
+    pub fn new(batch: Box<RecordBatch>, batch_schema: SchemaRef) -> Self {
         let num_columns = batch.num_columns();
         let mut schema: HashMap<String, String> = HashMap::new();
         let mut column_names: Vec<String> = Vec::new();
@@ -110,9 +102,9 @@ impl ArrowAccessor {
         Some(col.value_as_date(ridx).unwrap())
     }
 
-    pub fn get_time(&self, column_name: &str, ridx: usize) -> Option<NaiveDateTime> {
+    pub fn get_datetime(&self, column_name: &str, ridx: usize) -> Option<i64> {
         let col = &self.data[column_name].as_any().downcast_ref::<TimestampMillisecondArray>().take().unwrap();
-        Some(col.value_as_datetime(ridx).unwrap())
+        Some(col.value(ridx))
     }
 
     pub fn get_bool(&self, column_name: &str, ridx: usize) -> Option<bool> {
@@ -140,7 +132,7 @@ impl fmt::Display for ArrowAccessor {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (name, column) in &self.data {
             let dtype = column.data_type();
-            write!(f, "{}: {}\n", name, dtype.to_json());
+            write!(f, "{}: {:?}\n", name, dtype.to_json());
         }
         write!(f, "\n")
     }
