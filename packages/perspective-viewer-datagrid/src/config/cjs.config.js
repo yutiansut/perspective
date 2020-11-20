@@ -10,6 +10,6 @@ module.exports = common({}, config =>
             library: "perspective-viewer-datagrid",
             libraryTarget: "umd",
             path: path.resolve(__dirname, "../../dist/cjs")
-        }
+        },
     })
 );

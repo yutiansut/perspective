@@ -10,12 +10,16 @@
 import {registerPlugin} from "@finos/perspective-viewer/dist/esm/utils.js";
 
 import "regular-table";
-import {createModel, configureRegularTable, formatters} from "regular-table/dist/examples/perspective.js";
+import {configureRegularTable, formatters} from "regular-table/dist/examples/perspective.js";
 import MATERIAL_STYLE from "../less/regular_table.less";
 
 import {configureRowSelectable, deselect} from "./row_selection.js";
 import {configureEditable} from "./editing.js";
 import {configureSortable} from "./sorting.js";
+
+import("../../../../rust/perspective/arrow_accessor/pkg/arrow_accessor").then(mod => {
+    window.arrow_accessor = mod;
+});
 
 const VIEWER_MAP = new WeakMap();
 const INSTALLED = new WeakMap();
@@ -38,6 +42,127 @@ function lock(body) {
             resolve();
         }
     };
+}
+
+const FORMATTERS = {
+    datetime: Intl.DateTimeFormat("en-us", {
+        week: "numeric",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric"
+    }),
+    date: Intl.DateTimeFormat("en-us"),
+    integer: Intl.NumberFormat("en-us"),
+    float: new Intl.NumberFormat("en-us", {
+        style: "decimal",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })
+};
+
+function _format(parts, val, use_table_schema = false) {
+    if (val === null) {
+        return "-";
+    }
+    const title = parts[parts.length - 1];
+    const type = (use_table_schema && this._table_schema[title]) || this._schema[title] || "string";
+    return FORMATTERS[type] ? FORMATTERS[type].format(val) : val;
+}
+
+function* _tree_header(paths = [], row_headers) {
+    for (let path of paths) {
+        path = ["TOTAL", ...path];
+        const last = path[path.length - 1];
+        path = path.slice(0, path.length - 1).fill("");
+        const formatted = _format.call(this, [row_headers[path.length - 1]], last, true);
+        path = path.concat({toString: () => formatted});
+        path.length = row_headers.length + 1;
+        yield path;
+    }
+}
+
+async function dataListener(x0, y0, x1, y1) {
+    let columns = {};
+    let accessor;
+
+    if (x1 - x0 > 0 && y1 - y0 > 0) {
+        if (this._config.row_pivots.length == 0 && this._config.column_pivots.length == 0) {
+            let arrow = await this._view.to_arrow({
+                start_row: y0,
+                start_col: x0,
+                end_row: y1,
+                end_col: x1,
+                id: true
+            });
+
+            accessor = window.arrow_accessor.accessor_make(new Uint8Array(arrow));
+        } else {
+            columns = await this._view.to_columns({
+                start_row: y0,
+                start_col: x0,
+                end_row: y1,
+                end_col: x1,
+                id: true
+            });
+        }
+        this._ids = columns.__ID__;
+    }
+
+    const data = [];
+    const column_headers = [];
+
+    for (const path of this._column_paths.slice(x0, x1)) {
+        const path_parts = path.split("|");
+        const column = [];
+
+        for (let i = 0; i < this._num_rows; i++) {
+            column.push(window.arrow_accessor.accessor_get_value(accessor, path, i));
+        }
+
+        data.push(column.map(x => _format.call(this, path_parts, x)));
+        column_headers.push(path_parts);
+    }
+
+    window.arrow_accessor.accessor_drop(accessor);
+
+    return {
+        num_rows: this._num_rows,
+        num_columns: this._column_paths.length,
+        row_headers: Array.from(_tree_header.call(this, columns.__ROW_PATH__, this._config.row_pivots)),
+        column_headers,
+        data
+    };
+}
+
+async function createModel(regular, table, view, extend = {}) {
+    const config = await view.get_config();
+    const [table_schema, table_computed_schema, num_rows, schema, computed_schema, column_paths] = await Promise.all([
+        table.schema(),
+        table.computed_schema(config.computed_columns),
+        view.num_rows(),
+        view.schema(),
+        view.computed_schema(),
+        view.column_paths()
+    ]);
+
+    const model = Object.assign(extend, {
+        _view: view,
+        _table: table,
+        _table_schema: {...table_schema, ...table_computed_schema},
+        _config: config,
+        _num_rows: num_rows,
+        _schema: {...schema, ...computed_schema},
+        _ids: [],
+        _column_paths: column_paths.filter(path => {
+            return path !== "__ROW_PATH__" && path !== "__ID__";
+        })
+    });
+
+    regular.setDataListener(dataListener.bind(model));
+    return model;
 }
 
 const datagridPlugin = lock(async function(regular, viewer, view) {

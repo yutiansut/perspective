@@ -55,6 +55,16 @@ def make_app():
                 {"path": "../../node_modules/@finos/"},
             ),
             (
+                r"/(1.perspective-viewer-datagrid.js)",
+                tornado.web.StaticFileHandler,
+                {"path": "../../node_modules/@finos/perspective-viewer-datagrid/dist/umd"},
+            ),
+            (
+                r"/(3fc1e69bb8f3d85bdab5.module.wasm)",
+                tornado.web.StaticFileHandler,
+                {"path": "../../node_modules/@finos/perspective-viewer-datagrid/dist/umd"},
+            ),
+            (
                 r"/(.*)",
                 tornado.web.StaticFileHandler,
                 {"path": "./", "default_filename": "index.html"},

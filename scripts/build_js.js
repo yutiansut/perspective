@@ -140,14 +140,11 @@ try {
     if (!process.env.PACKAGE || minimatch("perspective", process.env.PACKAGE)) {
         compileCPP("perspective");
         RUNTIMES.map(compileRuntime);
-    }
-
-    lerna();
-
-    if (!process.env.PACKAGE || minimatch("perspective", process.env.PACKAGE)) {
         console.log("Compiling Rust `arrow_accessor` module");
         compileRust();
     }
+
+    lerna();
 } catch (e) {
     console.log(e.message);
     process.exit(1);
