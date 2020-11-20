@@ -13,6 +13,9 @@ use std::io::Cursor;
 use arrow::datatypes::{DataType, DateUnit, TimeUnit};
 use arrow::ipc::reader::StreamReader;
 use arrow::record_batch::RecordBatch;
+use chrono::Datelike;
+
+use js_sys::Date;
 use wasm_bindgen::prelude::*;
 
 use crate::accessor::ArrowAccessor;
@@ -83,20 +86,23 @@ pub fn accessor_get_value(accessor: *mut ArrowAccessor, column_name: &str, ridx:
                 None => JsValue::NULL,
             },
             DataType::Date32(DateUnit::Day) => match accessor.get_date(column_name, ridx) {
-                // FIXME: this returns a timestamp that is correct in the
-                // rust runtime's timezone but then gets converted to local
-                // time by the browser inside Date.new() - need to find a way
-                // to return a timestamp that is "offset again", i.e. when
-                // the browser applies its local time offset it returns to
-                // midnight on the correct day.
-                Some(value) => JsValue::from(value as f64),
+                Some(value) => {
+                    // Construct a new `Date()` object in the browser's local
+                    // time, and use the object's Unix timestamp, otherwise
+                    // the browser will attempt to coerce to UTC and offset the
+                    // timestamp value again when it is not needed.
+                    let dt = Date::new_with_year_month_day(
+                        value.year() as u32,
+                        value.month0() as i32,
+                        value.day() as i32,
+                    );
+                    JsValue::from(dt.value_of())
+                }
                 None => JsValue::NULL,
             },
             DataType::Timestamp(TimeUnit::Millisecond, _) => {
                 match accessor.get_datetime(column_name, ridx) {
-                    Some(value) => {
-                        JsValue::from(value as f64)
-                    }
+                    Some(value) => JsValue::from(value as f64),
                     None => JsValue::NULL,
                 }
             }
