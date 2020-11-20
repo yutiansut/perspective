@@ -6,11 +6,11 @@
  * the Apache License 2.0.  The full license can be found in the LICENSE file.
  *
  */
-use std::io::Cursor;
-use arrow::ipc::reader::{StreamReader};
+use arrow::ipc::reader::StreamReader;
 use arrow::record_batch::RecordBatch;
+use std::io::Cursor;
 
-use crate::arrow::ArrowAccessor;
+use crate::accessor::ArrowAccessor;
 
 /// Load an arrow binary in stream format.
 pub fn load_arrow_stream(buffer: Box<[u8]>) -> Box<ArrowAccessor> {
@@ -21,10 +21,12 @@ pub fn load_arrow_stream(buffer: Box<[u8]>) -> Box<ArrowAccessor> {
     // Iterate over record batches, and collect them into a vector of
     // heap-allocated batches. Do not use the `reader` after this line,
     // as it is consumed by `.map()` below.
-    let batches = reader.map(|batch| {
-        // Panic if it can't read the batch
-        Box::new(batch.unwrap())
-    }).collect::<Vec<Box<RecordBatch>>>();
+    let batches = reader
+        .map(|batch| {
+            // Panic if it can't read the batch
+            Box::new(batch.unwrap())
+        })
+        .collect::<Vec<Box<RecordBatch>>>();
 
     if let [batch] = &batches[..] {
         Box::new(ArrowAccessor::new(batch.clone(), schema))

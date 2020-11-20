@@ -108,9 +108,9 @@ function compileCPP(packageName) {
 }
 
 function compileRust() {
-    const base_dir = path.join(__dirname, "..", "rust", "perspective", "arrow-data-slice");
+    const base_dir = path.join(__dirname, "..", "rust", "perspective", "arrow_accessor");
     const node_modules_dir = path.join(__dirname, "..", "node_modules");
-    const node_modules_dir_rust = path.join(__dirname, "..", "node_modules", "arrow_data_slice")
+    const node_modules_dir_rust = path.join(__dirname, "..", "node_modules", "arrow_accessor");
 
     mkdirp.sync(node_modules_dir_rust);
 
@@ -145,7 +145,7 @@ try {
     lerna();
 
     if (!process.env.PACKAGE || minimatch("perspective", process.env.PACKAGE)) {
-        console.log("Compiling Rust `arrow-data-slice` module");
+        console.log("Compiling Rust `arrow_accessor` module");
         compileRust();
     }
 } catch (e) {

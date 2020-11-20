@@ -1,5 +1,5 @@
 [package]
-name = "arrow_data_slice"
+name = "arrow_accessor"
 version = "0.1.0"
 description = "A module that allows arrow binaries to be read out into Javascript without materializing the entire binary into a JS data structure."
 authors = ["The Perspective Authors"]
