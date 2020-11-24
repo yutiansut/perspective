@@ -89,6 +89,7 @@ async function dataListener(x0, y0, x1, y1) {
     let accessor;
 
     if (x1 - x0 > 0 && y1 - y0 > 0) {
+        let start1 = performance.now();
         if (this._config.row_pivots.length == 0 && this._config.column_pivots.length == 0) {
             let arrow = await this._view.to_arrow({
                 start_row: y0,
@@ -99,7 +100,9 @@ async function dataListener(x0, y0, x1, y1) {
             });
 
             accessor = window.arrow_accessor.accessor_make(new Uint8Array(arrow));
+            console.log(`arrow accessor took ${performance.now() - start1} ms`);
         } else {
+            let start1 = performance.now();
             columns = await this._view.to_columns({
                 start_row: y0,
                 start_col: x0,
@@ -107,6 +110,7 @@ async function dataListener(x0, y0, x1, y1) {
                 end_col: x1,
                 id: true
             });
+            console.log(`to_columns took ${performance.now() - start1} ms`);
         }
         this._ids = columns.__ID__;
     }
@@ -116,12 +120,8 @@ async function dataListener(x0, y0, x1, y1) {
 
     for (const path of this._column_paths.slice(x0, x1)) {
         const path_parts = path.split("|");
-        const column = [];
-
-        for (let i = 0; i < this._num_rows; i++) {
-            column.push(window.arrow_accessor.accessor_get_value(accessor, path, i));
-        }
-
+        // const column = columns[path] || new Array(y1 - y0).fill(null);
+        const column = window.arrow_accessor.accessor_get_column(accessor, path);
         data.push(column.map(x => _format.call(this, path_parts, x)));
         column_headers.push(path_parts);
     }

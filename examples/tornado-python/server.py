@@ -29,7 +29,10 @@ def perspective_thread(manager):
     psp_loop = tornado.ioloop.IOLoop()
     manager.set_loop_callback(psp_loop.add_callback)
     with open(file_path, mode="rb") as file:
-        table = Table(file.read(), index="Row ID")
+        # t = Table(file.read())
+        # v = t.view(columns=[c for c in t.columns() if c in ("Row ID", "Sales", "Profit", "Discount", "Order Date", "Ship Date")])
+        # table = Table(v.to_arrow())
+        table = Table(file.read())
         manager.host_table("data_source_one", table)
         manager.host_view("view_one", table.view())
     psp_loop.start()
@@ -60,7 +63,7 @@ def make_app():
                 {"path": "../../node_modules/@finos/perspective-viewer-datagrid/dist/umd"},
             ),
             (
-                r"/(3fc1e69bb8f3d85bdab5.module.wasm)",
+                r"/(.*module.wasm)",
                 tornado.web.StaticFileHandler,
                 {"path": "../../node_modules/@finos/perspective-viewer-datagrid/dist/umd"},
             ),
