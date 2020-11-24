@@ -29,9 +29,6 @@ def perspective_thread(manager):
     psp_loop = tornado.ioloop.IOLoop()
     manager.set_loop_callback(psp_loop.add_callback)
     with open(file_path, mode="rb") as file:
-        # t = Table(file.read())
-        # v = t.view(columns=[c for c in t.columns() if c in ("Row ID", "Sales", "Profit", "Discount", "Order Date", "Ship Date")])
-        # table = Table(v.to_arrow())
         table = Table(file.read())
         manager.host_table("data_source_one", table)
         manager.host_view("view_one", table.view())

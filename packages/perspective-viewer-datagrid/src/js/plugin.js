@@ -86,7 +86,7 @@ function* _tree_header(paths = [], row_headers) {
 
 async function dataListener(x0, y0, x1, y1) {
     let columns = {};
-    let accessor;
+    let arrow_data, accessor;
 
     if (x1 - x0 > 0 && y1 - y0 > 0) {
         let start1 = performance.now();
@@ -101,6 +101,8 @@ async function dataListener(x0, y0, x1, y1) {
 
             accessor = window.arrow_accessor.accessor_make(new Uint8Array(arrow));
             console.log(`arrow accessor took ${performance.now() - start1} ms`);
+            arrow_data = window.arrow_accessor.accessor_get_data(accessor);
+            window.arrow_accessor.accessor_drop(accessor);
         } else {
             let start1 = performance.now();
             columns = await this._view.to_columns({
@@ -118,15 +120,13 @@ async function dataListener(x0, y0, x1, y1) {
     const data = [];
     const column_headers = [];
 
-    for (const path of this._column_paths.slice(x0, x1)) {
+    for (const [cidx, path] of this._column_paths.slice(x0, x1).entries()) {
         const path_parts = path.split("|");
         // const column = columns[path] || new Array(y1 - y0).fill(null);
-        const column = window.arrow_accessor.accessor_get_column(accessor, path);
+        const column = arrow_data[cidx];
         data.push(column.map(x => _format.call(this, path_parts, x)));
         column_headers.push(path_parts);
     }
-
-    window.arrow_accessor.accessor_drop(accessor);
 
     return {
         num_rows: this._num_rows,
