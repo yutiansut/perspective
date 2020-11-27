@@ -70,6 +70,7 @@ class t_ctx_grouped_pkey;
 struct PERSPECTIVE_EXPORT t_process_table_result {
     std::shared_ptr<t_data_table> m_flattened_data_table;
     bool m_should_notify_userspace;
+    bool m_should_notify_remove;
 };
 class PERSPECTIVE_EXPORT t_gnode {
 public:
@@ -114,7 +115,7 @@ public:
      * 
      * @param port_id 
      */
-    bool process(t_uindex port_id);
+    t_process_table_result process(t_uindex port_id);
 
     /**
      * @brief Create a new input port, store it in `m_input_ports`, and

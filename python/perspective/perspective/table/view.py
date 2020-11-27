@@ -101,6 +101,7 @@ class View(object):
 
         self._column_only = self._view.is_column_only()
         self._update_callbacks = self._table._update_callbacks
+        self._remove_callbacks = self._table._remove_callbacks
         self._delete_callbacks = _PerspectiveCallBackCache()
         self._client_id = None
 
@@ -301,8 +302,46 @@ class View(object):
             }
         )
 
+    def on_remove(self, callback):
+        """Add a callback to be fired when :func:`perspective.Table.remove()` is
+        called on the parent :class:`~perspective.Table`.
+
+        Multiple callbacks can be set through calling ``on_remove`` multiple
+        times, and will be called in the order they are set. Callback must be a
+        callable function that takes exactly 1 parameter. This parameter is
+        always `port_id`, an :obj:`int` that indicates which input port the
+        remove comes from. A `RuntimeError` will be thrown if the callback
+        has mis-configured parameters.
+        Args:
+            callback (:obj:`callable`): a callable function reference that will
+                be called when :func:`perspective.Table.remove()` is called.
+
+        Examples:
+            >>> def remover(port_id):
+            ...     print("Remove fired on port", port_id)
+            >>> view.on_remove(remover)
+            >>> table.remove([1])'
+            >>> Remove fired on port 0
+        """
+        self._table._state_manager.call_process(self._table._table.get_id())
+
+        if not callable(callback):
+            raise ValueError("Invalid callback - must be a callable function")
+
+        wrapped_callback = partial(
+            self._wrapped_on_update_callback, mode="none", callback=callback
+        )
+
+        self._remove_callbacks.add_callback(
+            {
+                "name": self._name,
+                "orig_callback": callback,
+                "callback": wrapped_callback,
+            }
+        )
+
     def remove_update(self, callback):
-        """Given a callback function, remove it from the list of callbacks.
+        """Given a callback function, remove it from the list of update callbacks.
 
         Args:
             callback (:obj:`func`): a function reference that will be removed.
@@ -311,7 +350,7 @@ class View(object):
             >>> table = perspective.Table(data)
             >>> view = table.view()
             >>> view2 = table.view()
-            >>> def callback():
+            >>> def callback(port_id):
             ...     print("called!")
             >>> view.on_update(callback)
             >>> view2.on_update(callback)
@@ -324,6 +363,32 @@ class View(object):
         if not callable(callback):
             return ValueError("remove_update callback should be a callable function!")
         self._update_callbacks.remove_callbacks(
+            lambda cb: cb["orig_callback"] == callback
+        )
+
+    def remove_remove(self, callback):
+        """Given a callback function, remove it from the list of remove callbacks.
+
+        Args:
+            callback (:obj:`func`): a function reference that will be removed.
+
+        Examples:
+            >>> table = perspective.Table(data)
+            >>> view = table.view()
+            >>> view2 = table.view()
+            >>> def callback(port_id):
+            ...     print("removed!")
+            >>> view.on_remove(callback)
+            >>> view2.on_remove(callback)
+            >>> table.remove(pkeys)
+            removed!
+            >>> view2.remove_remove(callback)
+            >>> table.remove(pkeys) # callback removed and will not fire
+        """
+        self._table._state_manager.call_process(self._table._table.get_id())
+        if not callable(callback):
+            return ValueError("remove_remove callback should be a callable function!")
+        self._remove_callbacks.remove_callbacks(
             lambda cb: cb["orig_callback"] == callback
         )
 
@@ -601,7 +666,6 @@ class View(object):
 
         if cache.get(port_id) is None:
             cache[port_id] = {}
-
         if mode == "row":
             if cache[port_id].get("row_delta") is None:
                 cache["row_delta"] = self._get_row_delta()

@@ -76,6 +76,7 @@ class Table(object):
 
         self._gnode_id = self._table.get_gnode().get_id()
         self._update_callbacks = _PerspectiveCallBackCache()
+        self._remove_callbacks = _PerspectiveCallBackCache()
         self._delete_callbacks = _PerspectiveCallBackCache()
         self._views = []
         self._delete_callback = None
@@ -349,7 +350,6 @@ class Table(object):
                 _accessor._types.append(index_dtype)
             else:
                 _accessor._types.append(t_dtype.DTYPE_INT32)
-
         self._table = make_table(
             self._table,
             _accessor,
@@ -535,3 +535,15 @@ class Table(object):
         cache = {}
         for callback in self._update_callbacks:
             callback["callback"](port_id=port_id, cache=cache)
+
+    def _remove_callback(self, port_id):
+        """After `process` completes internally, this method is called by the
+        C++ with a `port_id`, indicating the port on which the remove was
+        processed.
+
+        Arguments:
+            port_id (:obj:`int`): an int indicating which port the remove
+            came from.
+        """
+        for callback in self._remove_callbacks:
+            callback["callback"](port_id=port_id, cache={})

@@ -169,6 +169,7 @@ export default function(Module) {
         this.ctx = this._View.get_context();
         this.column_only = this._View.is_column_only();
         this.update_callbacks = this.table.update_callbacks;
+        this.remove_callbacks = this.table.remove_callbacks;
         this.overridden_types = this.table.overridden_types;
         this._delete_callbacks = [];
         bindall(this);
@@ -891,6 +892,19 @@ export default function(Module) {
         });
     };
 
+    view.prototype.on_remove = function (callback) {
+        _call_process(this.table.get_id());
+
+        this.remove_callbacks.push({
+            view: this,
+            orig_callback: callback,
+            callback: async (port_id) => {
+                let updated = { port_id };
+                callback(updated);
+            }
+        });
+    };
+
     function filterInPlace(a, condition) {
         let i = 0,
             j = 0;
@@ -1072,6 +1086,7 @@ export default function(Module) {
         this.limit = limit;
         this.computed = computed || [];
         this.update_callbacks = [];
+        this.remove_callbacks = [];
         this._delete_callbacks = [];
         this.views = [];
         this.overridden_types = overridden_types;
