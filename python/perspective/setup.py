@@ -75,6 +75,7 @@ requires_dev_py2 = [
     "pytz>=2018.9",
     "Sphinx>=1.8.4",
     "sphinx-markdown-builder>=0.5.2",
+    "wheel",
 ] + requires
 
 requires_dev = [
