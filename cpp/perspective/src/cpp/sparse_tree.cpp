@@ -1398,25 +1398,39 @@ t_stree::update_agg_table(
                     dst->set_scalar(dst_ridx, new_value);
             } break;
             case AGGTYPE_STANDARD_DEVIATION: {
-                old_value.set(dst->get_scalar(dst_ridx));
-
+                // Get the accumulated count (num_rows), mean, and sum of
+                // squares of difference from the mean (M2). Because on each
+                // update cycle, the underlying data could have changed entirely,
+                // we still need to iterate through all the values on the
+                // gstate to correctly calculate stddev.
                 auto pkeys = get_pkeys(nidx);
                 std::vector<double> values;
 
                 read_column_from_gstate(
                     gstate, expression_master_table, spec.get_dependencies()[0].name(), pkeys, values, false);
 
-                double count = 0, mean = 0, sum = 0;
+                // Have to calculate values starting from 0 each time
+                double count = 0;
+                double mean = 0;
+                double m2 = 0;
 
                 for (double num : values) {
                     count++;
                     double next_mean = mean + (num - mean) / count;
-                    sum += (num - mean) * (num - next_mean);
+                    m2 += (num - mean) * (num - next_mean);
                     mean = next_mean;
                 }
 
-                new_value.set(std::sqrt(sum / values.size()));
-                dst->set_scalar(dst_ridx, new_value);
+                // Store values for extract_aggregate
+                std::array<double, 3>* arr = dst->get_nth<std::array<double, 3>>(dst_ridx);
+
+                (*arr)[0] = count;
+                (*arr)[1] = mean;
+                (*arr)[2] = m2;
+
+                // old_value and new_value are not set, as they are only used
+                // inside the deprecated cell deltas API.
+                dst->set_valid(nidx, true);
             } break;
             default: { PSP_COMPLAIN_AND_ABORT("Not implemented"); }
         } // end switch

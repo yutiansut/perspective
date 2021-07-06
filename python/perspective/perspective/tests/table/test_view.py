@@ -537,7 +537,7 @@ class TestView(object):
 
         table = Table(data)
         view = table.view(
-            aggregates={"x": "standard deviation"},
+            aggregates={"x": "stddev"},
             row_pivots=["y"]
         )
 
@@ -545,6 +545,24 @@ class TestView(object):
         expected = np.std(data["x"])
 
         assert result["x"] == approx([expected, expected])
+
+    def test_view_standard_deviation_multi(self):
+        data = {
+            "a": [91.96, 258.576, 29.6, 243.16, 36.24, 25.248, 79.99, 206.1, 31.5, 55.6],
+            "b": [1 if i % 2 == 0 else 0 for i in range(10)]
+        }
+        table = Table(data)
+        view = table.view(
+            aggregates={"a": "stddev"},
+            row_pivots=["b"]
+        )
+
+        result = view.to_columns()
+        expected_total = np.std(data["a"])
+        expected_zero = np.std([data["a"][1], data["a"][3], data["a"][5], data["a"][7], data["a"][9]])
+        expected_one = np.std([data["a"][0], data["a"][2], data["a"][4], data["a"][6], data["a"][8]])
+
+        assert result["a"] == approx([expected_total, expected_zero, expected_one])
 
     # sort
 

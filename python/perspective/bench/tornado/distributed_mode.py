@@ -18,11 +18,25 @@ async def make_view_arrow(client):
     """Test how long it takes to create a view on the remote table and
     retrieve an arrow."""
     table = client.open_table("data_source_one")
-    view = table.view()
+    view = await table.view()
     start = time.time()
     arrow = await view.to_arrow(end_row=ARROW_LENGTH)
     end = time.time() - start
     assert len(arrow) > 0
+    return [end]
+
+
+async def test_standard_deviation(client):
+    table = client.open_table("data_source_one")
+    start = time.time()
+    view = await table.view(
+        row_pivots=["State"],
+        aggregates={"Sales": "standard deviation"},
+        columns=["Sales"],
+    )
+    num_rows = await view.num_rows()
+    end = time.time() - start
+    assert num_rows > 0
     return [end]
 
 
@@ -43,6 +57,10 @@ if __name__ == "__main__":
     yarn bench test_benchmark.py -c10 -r5 ws://localhost:8080
     ```
     """
-    logging.info("Create view, request arrow length %d", ARROW_LENGTH)
-    runner = PerspectiveTornadoBenchmark(make_view_arrow)
+    # logging.info("Create view, request arrow length %d", ARROW_LENGTH)
+    # runner = PerspectiveTornadoBenchmark(make_view_arrow)
+    # runner.run()
+
+    logging.info("Standard deviation, Sales grouped by State")
+    runner = PerspectiveTornadoBenchmark(test_standard_deviation)
     runner.run()

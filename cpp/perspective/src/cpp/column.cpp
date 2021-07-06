@@ -435,6 +435,20 @@ t_column::get_scalar(t_uindex idx) const {
                 = m_data->get_nth<std::pair<double, double>>(idx);
             rv.set(pair->first / pair->second);
         } break;
+        case DTYPE_F64ARRAY: {
+            const std::array<double, 3>* arr =
+                m_data->get_nth<std::array<double, 3>>(idx);
+
+            // TODO: the mean calculation is baked into the assumption of
+            // DTYPE_F64PAIR above, so we can bake in the variance as well and
+            // use it for both variance and stddev.
+            // population variance = m2 / count
+            if ((*arr)[0] >= 2) {
+                rv.set((*arr)[2] / (*arr)[0]);  
+            } else {
+                rv.set(t_none());
+            }
+        } break;
         case DTYPE_OBJECT: {
             // set as uint64_t
             rv.set(*(m_data->get_nth<std::uint64_t>(idx)));
@@ -493,6 +507,10 @@ t_column::clear(t_uindex idx, t_status status) {
             v.first = 0;
             v.second = 0;
             set_nth<std::pair<std::uint64_t, std::uint64_t>>(idx, v, status);
+        } break;
+        case DTYPE_F64ARRAY: {
+            std::array<double, 3> v = {0.0, 0.0, 0.0};
+            set_nth<std::array<double, 3>>(idx, v, status);
         } break;
         case DTYPE_OBJECT: {
             set_nth<std::uint64_t>(idx, 0, status);

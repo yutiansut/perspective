@@ -194,7 +194,7 @@ t_aggspec::agg_str() const {
             return "pct_sum_grand_total";
         }
         case AGGTYPE_STANDARD_DEVIATION: {
-            return "standard_deviation";
+            return "stddev";
         }
         default: {
             PSP_COMPLAIN_AND_ABORT("Unknown agg type");
@@ -328,8 +328,7 @@ t_aggspec::get_output_specs(const t_schema& schema) const {
         }
         case AGGTYPE_SCALED_DIV:
         case AGGTYPE_SCALED_ADD:
-        case AGGTYPE_SCALED_MUL:
-        case AGGTYPE_STANDARD_DEVIATION: {
+        case AGGTYPE_SCALED_MUL: {
             return mk_col_name_type_vec(name(), DTYPE_FLOAT64);
         }
         case AGGTYPE_UDF_COMBINER:
@@ -347,6 +346,9 @@ t_aggspec::get_output_specs(const t_schema& schema) const {
         }
         case AGGTYPE_DISTINCT_COUNT: {
             return mk_col_name_type_vec(name(), DTYPE_UINT32);
+        }
+        case AGGTYPE_STANDARD_DEVIATION: {
+            return mk_col_name_type_vec(name(), DTYPE_F64ARRAY);
         }
         default: { PSP_COMPLAIN_AND_ABORT("Unknown agg type"); }
     }

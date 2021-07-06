@@ -99,7 +99,8 @@ is_deterministic_sized(t_dtype dtype) {
         case DTYPE_STR:
         case DTYPE_TIME:
         case DTYPE_DATE:
-        case DTYPE_F64PAIR: {
+        case DTYPE_F64PAIR:
+        case DTYPE_F64ARRAY: {
             return true;
         }
         default: { return false; }
@@ -150,6 +151,9 @@ get_dtype_size(t_dtype dtype) {
         }
         case DTYPE_F64PAIR: {
             return sizeof(std::pair<double, double>);
+        }
+        case DTYPE_F64ARRAY: {
+            return sizeof(std::array<double, 3>);
         }
         default: { PSP_COMPLAIN_AND_ABORT("Unknown dtype"); }
     }
@@ -231,9 +235,12 @@ get_dtype_descr(t_dtype dtype) {
         case DTYPE_F64PAIR: {
             return "f64pair";
         } break;
+        case DTYPE_F64ARRAY: {
+            return "f64array";
+        } break;
         case DTYPE_OBJECT: {
             return "object";
-        }
+        } break;
         default: { PSP_COMPLAIN_AND_ABORT("Encountered unknown dtype"); }
     }
     return std::string("dummy");
@@ -481,7 +488,7 @@ str_to_aggtype(const std::string& str) {
         return t_aggtype::AGGTYPE_UDF_COMBINER;
     } else if (str.find("udf_reducer_") != std::string::npos) {
         return t_aggtype::AGGTYPE_UDF_REDUCER;
-    } else if (str == "standard deviation" || str == "standard_deviation") {
+    } else if (str == "stddev" || str == "standard deviation") {
         return t_aggtype::AGGTYPE_STANDARD_DEVIATION;
     } else {
         std::stringstream ss;

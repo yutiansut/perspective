@@ -68,8 +68,7 @@ extract_aggregate(
         case AGGTYPE_JOIN:
         case AGGTYPE_IDENTITY:
         case AGGTYPE_DISTINCT_COUNT:
-        case AGGTYPE_DISTINCT_LEAF:
-        case AGGTYPE_STANDARD_DEVIATION: {
+        case AGGTYPE_DISTINCT_LEAF: {
             t_tscalar rval = aggcol->get_scalar(ridx);
             return rval;
         } break;
@@ -95,6 +94,23 @@ extract_aggregate(
             } else {
                 rval.set(t_none());
             }
+            return rval;
+        } break;
+        case AGGTYPE_STANDARD_DEVIATION: {
+            // Finalize the standard deviation based on the current count,
+            // mean, and sum of squares of differences from the current mean
+            const std::array<double, 3>* arr =
+                aggcol->get_nth<std::array<double, 3>>(ridx);
+
+            t_tscalar rval;
+            rval.set(t_none());
+
+            // Only calculate stddev for more than 2 values in the population
+            if ((*arr)[0] >= 2) {
+                double stddev = std::sqrt((*arr)[2] / (*arr)[0]);
+                rval.set(stddev);
+            }
+
             return rval;
         } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected agg type"); }

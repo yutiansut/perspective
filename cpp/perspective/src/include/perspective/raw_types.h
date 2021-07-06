@@ -45,6 +45,7 @@ enum t_dtype {
     DTYPE_OID,
     DTYPE_OBJECT,
     DTYPE_F64PAIR,
+    DTYPE_F64ARRAY,
     DTYPE_USER_FIXED,
     DTYPE_STR,
     DTYPE_USER_VLEN,
