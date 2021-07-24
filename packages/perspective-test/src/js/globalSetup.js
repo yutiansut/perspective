@@ -26,6 +26,7 @@ module.exports = async function() {
 
         // https://github.com/puppeteer/puppeteer/issues/1183
         defaultViewport: null,
+        executablePath: '/usr/bin/chromium',
         args
     });
     process.env.PSP_BROWSER_ENDPOINT = global.__BROWSER__.wsEndpoint();

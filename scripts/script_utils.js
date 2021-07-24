@@ -274,6 +274,7 @@ exports.docker = function docker(image = "puppeteer") {
     return bash`docker run \
         ${flags} \
         ${env_vars} \
+        --platform linux/arm64 \
         -v${CWD}:/usr/src/app/perspective \
         -w /usr/src/app/perspective --shm-size=2g -u root \
         --cpus="${CPUS}.0" ${IMAGE}`;
