@@ -545,9 +545,11 @@ module.exports = perspective => {
             let view2 = await table2.view();
             let json2 = await view2.to_json();
 
+            const paths = [null, "a", "b", "c", "d"];
             expect(json2).toEqual(
-                json.map(x => {
+                json.map((x, idx) => {
                     delete x["__ROW_PATH__"];
+                    x["__ROW_PATH_0_string"] = paths[idx];
                     return x;
                 })
             );
@@ -570,6 +572,7 @@ module.exports = perspective => {
             let result = await view2.to_columns();
 
             expect(result).toEqual({
+                __ROW_PATH_0_string: [null, "a", "b"],
                 float: [2.75, 1.75, 3.75],
                 string: [4, 2, 2]
             });
@@ -589,9 +592,11 @@ module.exports = perspective => {
             let view2 = await table2.view();
             let json2 = await view2.to_json();
 
+            const paths = [null, "a", "b", "c", "d"];
             expect(json2).toEqual(
-                json.map(x => {
+                json.map((x, idx) => {
                     delete x["__ROW_PATH__"];
+                    x["__ROW_PATH_0_string"] = paths[idx];
                     return x;
                 })
             );
@@ -611,9 +616,11 @@ module.exports = perspective => {
             let view2 = await table2.view();
             let json2 = await view2.to_json();
 
+            const paths = [null, "a", "b", "c", "d"];
             expect(json2).toEqual(
-                json.map(x => {
+                json.map((x, idx) => {
                     delete x["__ROW_PATH__"];
+                    x["__ROW_PATH_0_string"] = paths[idx];
                     return x;
                 })
             );
@@ -622,6 +629,109 @@ module.exports = perspective => {
             table2.delete();
             view.delete();
             table.delete();
+        });
+
+        it("Transitive arrow output 1-sided multi pivot", async () => {
+            const table = await perspective.table({
+                a: [1, 2, 3, 4],
+                b: [2, 4, 2, 4],
+                c: [0.5, 0.5, 0.5, 0.5]
+            });
+            const view = await table.view({
+                row_pivots: ["a", "c"]
+            });
+            const arrow = await view.to_arrow();
+
+            const table2 = await perspective.table(arrow);
+            const view2 = await table2.view();
+            const result = await view2.to_columns();
+
+            expect(result["__ROW_PATH_0_a"]).toEqual([null, 1, 1, 2, 2, 3, 3, 4, 4]);
+            expect(result["__ROW_PATH_1_c"]).toEqual([null, null, 0.5, null, 0.5, null, 0.5, null, 0.5]);
+
+            await view2.delete();
+            await view.delete();
+            await table2.delete();
+            await table.delete();
+        });
+
+        it("Transitive arrow output 1-sided multi pivot nulls", async () => {
+            const table = await perspective.table({
+                a: [1, null, 3, 4],
+                b: [2, 4, 2, 4],
+                c: [0.5, 0.5, 0.5, 0.5]
+            });
+            const view = await table.view({
+                row_pivots: ["a", "c"]
+            });
+            const arrow = await view.to_arrow();
+
+            const table2 = await perspective.table(arrow);
+            const view2 = await table2.view();
+            const result = await view2.to_columns();
+
+            expect(result["__ROW_PATH_0_a"]).toEqual([null, null, null, 1, 1, 3, 3, 4, 4]);
+            expect(result["__ROW_PATH_1_c"]).toEqual([null, null, 0.5, null, 0.5, null, 0.5, null, 0.5]);
+
+            await view2.delete();
+            await view.delete();
+            await table2.delete();
+            await table.delete();
+        });
+
+        it("Transitive arrow output 1-sided multi pivot sort", async () => {
+            const table = await perspective.table({
+                a: [1, 2, 3, 4],
+                b: [2, 4, 2, 4],
+                c: [0.5, 0.5, 0.5, 0.5]
+            });
+            const view = await table.view({
+                row_pivots: ["a", "c"],
+                sort: [
+                    ["a", "desc"],
+                    ["c", "desc"]
+                ]
+            });
+            const arrow = await view.to_arrow();
+
+            const table2 = await perspective.table(arrow);
+            const view2 = await table2.view();
+            const result = await view2.to_columns();
+
+            expect(result["__ROW_PATH_0_a"]).toEqual([null, 4, 4, 3, 3, 2, 2, 1, 1]);
+            expect(result["__ROW_PATH_1_c"]).toEqual([0.5, null, 0.5, null, 0.5, null, 0.5, null, null, null]);
+
+            await view2.delete();
+            await view.delete();
+            await table2.delete();
+            await table.delete();
+        });
+
+        it("Transitive arrow output 1-sided datetime pivot", async () => {
+            const datetimes = [new Date(2020, 1, 29, 13), new Date(2021, 3, 15, 15), new Date(2021, 12, 31, 0, 15, 19)];
+            const table = await perspective.table({
+                a: datetimes,
+                b: [1, 2, 3]
+            });
+            const view = await table.view({
+                row_pivots: ["a"]
+            });
+            const arrow = await view.to_arrow();
+
+            const table2 = await perspective.table(arrow);
+            const view2 = await table2.view();
+            const result = await view2.to_columns();
+
+            expect(result).toEqual({
+                __ROW_PATH_0_a: [null].concat(datetimes.map(x => x.getTime())),
+                a: [3, 1, 1, 1],
+                b: [6, 1, 2, 3]
+            });
+
+            await view2.delete();
+            await view.delete();
+            await table2.delete();
+            await table.delete();
         });
 
         it("Transitive arrow output 1-sided with col range", async function() {
@@ -633,9 +743,35 @@ module.exports = perspective => {
             let view2 = await table2.view();
             let json2 = await view2.to_json();
 
+            const paths = [null, "a", "b", "c", "d"];
             expect(json2).toEqual(
-                json.map(x => {
+                json.map((x, idx) => {
                     delete x["__ROW_PATH__"];
+                    x["__ROW_PATH_0_string"] = paths[idx];
+                    return x;
+                })
+            );
+
+            view2.delete();
+            table2.delete();
+            view.delete();
+            table.delete();
+        });
+
+        it("Transitive arrow output 1-sided with row range", async function() {
+            let table = await perspective.table(int_float_string_data);
+            let view = await table.view({row_pivots: ["string"]});
+            let json = await view.to_json({start_col: 1, end_col: 3});
+            let arrow = await view.to_arrow({start_col: 1, end_col: 3});
+            let table2 = await perspective.table(arrow);
+            let view2 = await table2.view();
+            let json2 = await view2.to_json();
+
+            const paths = [null, "a", "b", "c", "d"];
+            expect(json2).toEqual(
+                json.map((x, idx) => {
+                    delete x["__ROW_PATH__"];
+                    x["__ROW_PATH_0_string"] = paths[idx];
                     return x;
                 })
             );

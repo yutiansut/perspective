@@ -163,37 +163,9 @@ module.exports = perspective => {
                 view.on_update(
                     async function(updated) {
                         const expected = [
-                            {x: 14, y: 6, 'lower("y")': 6},
-                            {x: 1, y: 1, 'lower("y")': 1},
-                            {x: 3, y: 1, 'lower("y")': 1}
-                        ];
-                        await match_delta(perspective, updated.delta, expected);
-                        await view.delete();
-                        await table.delete();
-                        done();
-                    },
-                    {mode: "row"}
-                );
-
-                table.update({x: [1, 3], y: ["HELLO", "WORLD"]});
-            });
-
-            it("Returns appended rows for normal and expression columns, 1-sided", async function(done) {
-                const table = await perspective.table({
-                    x: [1, 2, 3, 4],
-                    y: ["A", "B", "C", "D"]
-                });
-                const view = await table.view({
-                    row_pivots: ['lower("y")'],
-                    expressions: ['lower("y")']
-                });
-
-                view.on_update(
-                    async function(updated) {
-                        const expected = [
-                            {x: 14, y: 6, 'lower("y")': 6},
-                            {x: 1, y: 1, 'lower("y")': 1},
-                            {x: 3, y: 1, 'lower("y")': 1}
+                            {'__ROW_PATH_0_lower("y")': null, x: 14, y: 6, 'lower("y")': 6},
+                            {'__ROW_PATH_0_lower("y")': "HELLO", x: 1, y: 1, 'lower("y")': 1},
+                            {'__ROW_PATH_0_lower("y")': "WORLD", x: 3, y: 1, 'lower("y")': 1}
                         ];
                         await match_delta(perspective, updated.delta, expected);
                         await view.delete();

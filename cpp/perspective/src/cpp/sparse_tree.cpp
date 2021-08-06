@@ -1512,6 +1512,25 @@ t_stree::get_ancestry(t_uindex idx) const {
     return rval;
 }
 
+t_uindex
+t_stree::get_ancestry_count(t_uindex idx) const {
+    t_uindex count = 0;
+
+    if (idx == 0)
+        // node is a root node
+        return count;
+
+    while (idx > 0) {
+        iter_by_idx iter = m_nodes->get<by_idx>().find(idx);
+
+        // access the node's parent
+        idx = iter->m_pidx;
+        count++;
+    }
+
+    return count;
+}
+
 t_index
 t_stree::get_sibling_idx(t_index p_ptidx, t_index p_nchild, t_uindex c_ptidx) const {
     t_by_pidx_ipair iterators = m_nodes->get<by_pidx>().equal_range(p_ptidx);
@@ -1559,6 +1578,66 @@ t_stree::get_path(t_uindex idx, std::vector<t_tscalar>& rval) const {
         }
     }
     return;
+}
+
+void
+t_stree::fill_paths(
+    t_uindex ridx, t_uindex path_row, std::vector<std::vector<t_tscalar>>& rval) const {
+    if (ridx == 0) return;
+
+    // TODO: find a way to work the indices so that we don't need to allocate
+    // an intermediate vector. The issue is that at each node we don't know
+    // how many parent nodes it has, which means we can't determine which
+    // column to write to.
+    std::vector<t_tscalar> paths;
+    paths.reserve(m_pivots.size());
+
+    t_uindex curr_ridx = ridx;
+
+    while (curr_ridx != 0) {
+        iter_by_idx iter = m_nodes->get<by_idx>().find(curr_ridx);
+        paths.push_back(iter->m_value);
+        curr_ridx = iter->m_pidx;
+    }
+
+    t_uindex path_idx = paths.size() - 1;
+
+    for (auto pivot_idx = 0; pivot_idx < paths.size(); ++pivot_idx) {
+        rval[pivot_idx][path_row] = paths[path_idx];
+        path_idx--;
+    }
+}
+
+std::vector<std::vector<t_tscalar>>
+t_stree::get_paths(const std::vector<t_index>& row_indices) const {
+    auto s1 = std::chrono::high_resolution_clock::now();
+    std::vector<std::vector<t_tscalar>> rval;
+    auto num_pivots = m_pivots.size();
+
+    if (num_pivots == 0) return rval;
+
+    rval.resize(num_pivots);
+
+    auto num_rows = row_indices.size();
+
+    // each pivot column needs its own path vector.
+    for (auto i = 0; i < num_pivots; ++i) {
+        std::vector<t_tscalar> path;
+        path.resize(num_rows);
+        rval[i] = path;
+    }
+
+    t_index path_row = 0;
+
+    for (t_index ridx : row_indices) {
+        fill_paths(ridx, path_row, rval);
+        path_row++;
+    }
+
+    auto e1 = std::chrono::high_resolution_clock::now();
+    auto d1 = std::chrono::duration_cast<std::chrono::microseconds>(e1 - s1);
+    std::cout << "get_row_paths for " << row_indices.size() << " indices took " << d1.count() << "microseconds" << std::endl;
+    return rval;
 }
 
 t_uindex

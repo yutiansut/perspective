@@ -44,7 +44,8 @@ namespace apachearrow {
     /**
      * @brief Retrieve the correct index into the data slice for the given
      * column and row. This is a redefinition of the method in `t_data_slice`,
-     * except it does not rely on any instance variables.
+     * except it does not rely on any instance variables as we don't use the
+     * `t_data_slice` instance, instead accessing the its data vector directly.
      * 
      * @param cidx 
      * @param ridx 
