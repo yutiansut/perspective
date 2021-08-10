@@ -336,6 +336,7 @@ elseif(PSP_CPP_BUILD OR PSP_PYTHON_BUILD)
 		foreach(warning 4244 4251 4267 4275 4290 4786 4305 4996)
 			SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd${warning}")
 		endforeach(warning)
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
 		# When linking against Boost on Azure, bcrypt fails to link:
 		# - https://github.com/microsoft/vcpkg/issues/4481
 		# - https://github.com/boostorg/uuid/issues/68

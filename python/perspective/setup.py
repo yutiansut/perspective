@@ -163,13 +163,13 @@ class PSPBuild(build_ext):
         build_args = ["--config", cfg]
 
         if platform.system() == "Windows":
-            import distutils.msvccompiler as dm
+            # import distutils.msvccompiler as dm
 
-            msvc = {
-                "12": "Visual Studio 12 2013",
-                "14": "Visual Studio 14 2015",
-                "14.1": "Visual Studio 15 2017",
-            }.get(dm.get_build_version(), "Visual Studio 15 2017")
+            # msvc = {
+            #     "12": "Visual Studio 12 2013",
+            #     "14": "Visual Studio 14 2015",
+            #     "14.1": "Visual Studio 15 2017",
+            # }.get(dm.get_build_version(), "Visual Studio 15 2017")
 
             cmake_args.extend(
                 [
@@ -177,13 +177,17 @@ class PSPBuild(build_ext):
                         cfg.upper(), extdir
                     ).replace("\\", "/"),
                     "-G",
-                    os.environ.get("PSP_GENERATOR", msvc),
+                    "Visual Studio 14 2015",
+                    "-A",
+                    "x86",
+                    "-B",
+                    "Build32",
                 ]
             )
 
-            if sys.maxsize > 2 ** 32:
-                # build 64 bit to match python
-                cmake_args += ["-A", "x64"]
+            # if sys.maxsize > 2 ** 32:
+            #     # build 64 bit to match python
+            #     cmake_args += ["-A", "x64"]
 
             build_args += [
                 "--",
