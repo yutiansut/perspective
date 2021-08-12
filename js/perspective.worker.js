@@ -532,7 +532,7 @@ const CONFIG_ALIASES = {
   sorts: "sort"
 };
 const CONFIG_VALID_KEYS = ["viewport", "row_pivots", "column_pivots", "aggregates", "columns", "filter", "sort", "computed_columns", "expressions", "row_pivot_depth", "filter_op"];
-const NUMBER_AGGREGATES = ["any", "avg", "abs sum", "count", "distinct count", "dominant", "first by index", "last by index", "last", "high", "join", "low", "mean", "median", "pct sum parent", "pct sum grand total", "sum", "sum abs", "sum not null", "unique"];
+const NUMBER_AGGREGATES = ["any", "avg", "abs sum", "count", "distinct count", "dominant", "first by index", "last by index", "last", "high", "join", "low", "mean", "median", "pct sum parent", "pct sum grand total", "stddev", "sum", "sum abs", "sum not null", "unique", "var"];
 const STRING_AGGREGATES = ["any", "count", "distinct count", "distinct leaf", "dominant", "first by index", "join", "last by index", "last", "unique"];
 const BOOLEAN_AGGREGATES = ["any", "count", "distinct count", "distinct leaf", "dominant", "first by index", "last by index", "last", "unique"];
 const SORT_ORDERS = ["none", "asc", "desc", "col asc", "col desc", "asc abs", "desc abs", "col asc abs", "col desc abs"];
