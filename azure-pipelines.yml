@@ -48,7 +48,7 @@ parameters:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: '$(python.version)'
-          architecture: 'x64'
+          architecture: 'x86'
         displayName: 'Use Python $(python.version)'
   
       - bash: python -m pip install --upgrade pip wheel setuptools "jupyterlab>=3.0.14" numpy "pyarrow>=2" "black==20.8b1" flake8-black
