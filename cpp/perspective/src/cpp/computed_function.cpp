@@ -297,6 +297,54 @@ t_tscalar length::operator()(t_parameter_list parameters) {
     return rval;
 }
 
+match::match(std::shared_ptr<t_vocab> expression_vocab)
+    : exprtk::igeneric_function<t_tscalar>("TT")
+    , m_expression_vocab(expression_vocab)  {
+        t_tscalar sentinel;
+        sentinel.clear();
+
+        // The sentinel is a string scalar that is returned to indicate a
+        // valid call to the function without actually computing any values.
+        sentinel.m_type = DTYPE_STR;
+        sentinel.m_data.m_charptr = nullptr;
+        m_sentinel = sentinel;
+    }
+
+match::~match() {}
+
+t_tscalar match::operator()(t_parameter_list parameters) {
+    t_tscalar rval;
+    rval.clear();
+    
+    // Returns 1 or 0 as a float, so we can use in conditionals.
+    rval.m_type = DTYPE_FLOAT64;
+
+    // Parameters already validated
+    t_scalar_view str_view(parameters[0]);
+    t_scalar_view substr_view(parameters[1]);
+    t_tscalar str = str_view();
+    t_tscalar substr = substr_view();
+
+    if (
+        (str.get_dtype() != DTYPE_STR || str.m_status == STATUS_CLEAR) ||
+        (substr.get_dtype() != DTYPE_STR || substr.m_status == STATUS_CLEAR)) {
+        rval.m_status = STATUS_CLEAR;
+        return rval;
+    }
+
+    if (m_expression_vocab == nullptr) return rval;
+
+    if (!str.is_valid() || !substr.is_valid()) return rval;
+
+    boost::regex pattern(substr.to_string());
+    const std::string& string = str.to_string();
+    bool matched = boost::regex_match(string, pattern);
+
+    rval.set(static_cast<double>(matched));
+
+    return rval;
+}
+
 order::order(std::shared_ptr<t_vocab> expression_vocab)
     : m_order_map({})
     , m_order_idx(0)

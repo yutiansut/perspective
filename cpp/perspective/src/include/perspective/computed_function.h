@@ -18,6 +18,7 @@
 #include <perspective/data_table.h>
 #include <perspective/exprtk.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 #include <type_traits>
 #include <date/date.h>
 #include <tsl/hopscotch_set.h>
@@ -55,6 +56,15 @@ STRING_FUNCTION_HEADER(lower)
 
 // Length of the string
 STRING_FUNCTION_HEADER(length)
+
+// match(string, regex) - true if the whole string matches regex
+STRING_FUNCTION_HEADER(match)
+
+// search(string, regex) - true if a part or whole of the string matches regex
+STRING_FUNCTION_HEADER(search)
+
+// find(string, regex) - returns the index of the first occurrence of regex
+STRING_FUNCTION_HEADER(find)
 
 /**
  * @brief Given a string column and 1...n string parameters, generate a numeric

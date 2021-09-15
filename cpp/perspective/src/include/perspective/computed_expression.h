@@ -151,6 +151,7 @@ public:
     static computed_function::to_float TO_FLOAT_FN;
     static computed_function::make_date MAKE_DATE_FN;
     static computed_function::make_datetime MAKE_DATETIME_FN;
+    static computed_function::match STRING_MATCH_VALIDATOR_FN;
 };
 
 /**

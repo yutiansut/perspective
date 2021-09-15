@@ -395,6 +395,13 @@ thread_local! {
                 documentation: "Lowercase of x".to_owned(),
             },
             CompletionItemSuggestion {
+                label: "match".to_owned(),
+                kind: 1,
+                insert_text: "match(${1:string}, ${2:regex})".to_owned(),
+                insert_text_rules: 4,
+                documentation: "Match the entirety of a string by a regex".to_owned(),
+            },
+            CompletionItemSuggestion {
                 label: "month_of_year".to_owned(),
                 kind: 1,
                 insert_text: "month_of_year(${1:x})".to_owned(),
@@ -495,7 +502,7 @@ thread_local! {
             CompletionItemSuggestion {
                 label: "date".to_owned(),
                 kind: 1,
-                insert_text: "date(${1:year}, ${1:month}, ${1:day})".to_owned(),
+                insert_text: "date(${1:year}, ${2:month}, ${3:day})".to_owned(),
                 insert_text_rules: 4,
                 documentation: "Given a year, month (1-12) and day, create a new date".to_owned(),
             },
