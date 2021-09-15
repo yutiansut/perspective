@@ -715,37 +715,37 @@ template <> inline t_tscalar and_impl(const t_tscalar v0, const t_tscalar v1, t_
 
     // booleans need to return numeric scalars, otherwise they will not work
     // inside a conditional for some reason.
-    rval.set(static_cast<double>(static_cast<bool>(v0) && static_cast<bool>(v1)));
+    rval.set(static_cast<double>(v0.as_bool() && v1.as_bool()));
     return rval;
 }
 
 template <> inline t_tscalar or_impl(const t_tscalar v0, const t_tscalar v1, t_tscalar_type_tag) {
     t_tscalar rval;
-    rval.set(static_cast<double>(static_cast<bool>(v0) || static_cast<bool>(v1)));
+    rval.set(static_cast<double>(v0.as_bool() || v1.as_bool()));
     return rval;
 }
 
 template <> inline t_tscalar xor_impl(const t_tscalar v0, const t_tscalar v1, t_tscalar_type_tag) {
     t_tscalar rval;
-    rval.set(static_cast<double>(!v0 != !v1));
+    rval.set(static_cast<double>(!v0.as_bool() != !v1.as_bool()));
     return rval;
 }
 
 template <> inline t_tscalar nand_impl(const t_tscalar v0, const t_tscalar v1, t_tscalar_type_tag) {
     t_tscalar rval;
-    rval.set(static_cast<double>(!(static_cast<bool>(v0) && static_cast<bool>(v1))));
+    rval.set(static_cast<double>(!(v0.as_bool() && v1.as_bool())));
     return rval;
 }
 
 template <> inline t_tscalar nor_impl(const t_tscalar v0, const t_tscalar v1, t_tscalar_type_tag) {
     t_tscalar rval;
-    rval.set(static_cast<double>(!(static_cast<bool>(v0) || static_cast<bool>(v1))));
+    rval.set(static_cast<double>(!(v0.as_bool() || v1.as_bool())));
     return rval;
 }
 
 template <> inline t_tscalar xnor_impl(const t_tscalar v0, const t_tscalar v1, t_tscalar_type_tag) {
     t_tscalar rval;
-    rval.set(static_cast<double>(static_cast<bool>(v0) == static_cast<bool>(v1)));
+    rval.set(static_cast<double>(v0.as_bool() == v1.as_bool()));
     return rval;
 }
 
@@ -772,7 +772,7 @@ template <> inline bool is_integer_impl(const t_tscalar& v, t_tscalar_type_tag) 
 } // end namespace numeric
 
 inline bool is_true(const t_tscalar& v) {
-    return static_cast<bool>(v);
+    return v.as_bool();
 }
 
 inline bool is_false(const t_tscalar& v) {

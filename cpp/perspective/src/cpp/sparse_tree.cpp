@@ -1054,7 +1054,7 @@ t_stree::update_agg_table(
                     pkeys,
                     new_value,
                     [](const t_tscalar& row_value, t_tscalar& output) {
-                        if (row_value) {
+                        if (row_value.as_bool()) {
                             output.set(row_value);
                             return true;
                         }
@@ -1214,7 +1214,7 @@ t_stree::update_agg_table(
                             rval.set(true);
 
                             for (const auto& v : values) {
-                                if (!v) {
+                                if (!v.as_bool()) {
                                     rval.set(false);
                                     break;
                                 }
