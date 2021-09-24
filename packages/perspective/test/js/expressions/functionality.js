@@ -2784,6 +2784,10 @@ module.exports = (perspective) => {
                         'upper("c")',
                         `bucket("b", 'M')`,
                         `bucket("b", 's')`,
+                        `bucket("b",'M')`,
+                        `bucket("b",'s')`,
+                        `bucket("b",       'M')`,
+                        `bucket("b",       's')`,
                     ],
                 });
                 const schema = await view.expression_schema();
@@ -2796,6 +2800,10 @@ module.exports = (perspective) => {
                     'upper("c")': "string",
                     "bucket(\"b\", 'M')": "date",
                     "bucket(\"b\", 's')": "datetime",
+                    "bucket(\"b\",'M')": "date",
+                    "bucket(\"b\",'s')": "datetime",
+                    "bucket(\"b\",       'M')": "date",
+                    "bucket(\"b\",       's')": "datetime",
                 });
                 view.delete();
                 table.delete();

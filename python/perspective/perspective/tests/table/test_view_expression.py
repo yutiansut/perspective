@@ -968,6 +968,42 @@ class TestViewExpression(object):
             ],
         }
 
+    def test_view_day_bucket_date_space(self):
+        table = Table(
+            {
+                "a": [
+                    date(2020, 1, 1),
+                    date(2020, 1, 1),
+                    date(2020, 2, 29),
+                    date(2020, 3, 1),
+                ],
+            }
+        )
+        view = table.view(
+            expressions=["// bucket \n bucket(\"a\",'D')", "// bucket2 \n bucket(\"a\",      'D')"]
+        )
+        assert view.schema() == {"a": date, "bucket": date, "bucket2": date}
+        assert view.to_columns() == {
+            "a": [
+                datetime(2020, 1, 1),
+                datetime(2020, 1, 1),
+                datetime(2020, 2, 29),
+                datetime(2020, 3, 1),
+            ],
+            "bucket": [
+                datetime(2020, 1, 1),
+                datetime(2020, 1, 1),
+                datetime(2020, 2, 29),
+                datetime(2020, 3, 1),
+            ],
+            "bucket2": [
+                datetime(2020, 1, 1),
+                datetime(2020, 1, 1),
+                datetime(2020, 2, 29),
+                datetime(2020, 3, 1),
+            ]
+        }
+
     def test_view_day_bucket_date_with_null(self):
         table = Table(
             {

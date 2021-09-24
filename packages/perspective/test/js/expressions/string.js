@@ -731,4 +731,272 @@ module.exports = (perspective) => {
             table.delete();
         });
     });
+
+    describe("Regular Expressions", () => {
+        it("Match string with string", async () => {
+            const table = await perspective.table({
+                a: ["ABC", "DEF", "cbA", "HIjK", "lMNoP"],
+                b: ["ABC", "ad", "asudfh", "HIjK", "lMNoP"],
+            });
+
+            const expressions = [
+                `match("a", 'ABC')`,
+                "match('abc', 'abc')",
+                `match("a", 'A')`,
+            ];
+
+            const view = await table.view({
+                expressions,
+            });
+
+            const schema = await view.expression_schema();
+
+            for (const expr of expressions) {
+                expect(schema[expr]).toEqual("boolean");
+            }
+
+            const results = await view.to_columns();
+            expect(results[expressions[0]]).toEqual([
+                true,
+                false,
+                false,
+                false,
+                false,
+            ]);
+            expect(results[expressions[1]]).toEqual(Array(5).fill(true));
+            expect(results[expressions[2]]).toEqual(Array(5).fill(false));
+
+            await view.delete();
+            await table.delete();
+        });
+
+        it("Match should only work on strings", async () => {
+            const table = await perspective.table({
+                a: ["ABC", "DEF", "cbA", "HIjK", "lMNoP"],
+                b: ["abc123", "abc567", "abc56", "1234567", "aaa000"],
+            });
+
+            const expressions = [
+                `match("a", 123)`,
+                `match(today(), '[a-z]{3}[0-9]{3}')`,
+                `match(False, '[0-9]{7}')`,
+            ];
+
+            const validated = await table.validate_expressions(expressions);
+
+            for (const expr of expressions) {
+                expect(validated.expression_schema[expr]).toBeUndefined();
+                expect(validated.errors[expr]).toEqual({
+                    column: 0,
+                    line: 0,
+                    error_message:
+                        "Type Error - inputs do not resolve to a valid expression.",
+                });
+            }
+
+            await table.delete();
+        });
+
+        it("Match string with regex", async () => {
+            const table = await perspective.table({
+                a: ["ABC", "DEF", "cbA", "HIjK", "lMNoP"],
+                b: ["abc123", "abc567", "abc56", "1234567", "aaa000"],
+            });
+
+            const expressions = [
+                `match("a", '.*')`,
+                `match("b", '[a-z]{3}[0-9]{3}')`,
+                `match("b", '[0-9]{7}')`,
+            ];
+
+            const view = await table.view({
+                expressions,
+            });
+
+            const schema = await view.expression_schema();
+
+            for (const expr of expressions) {
+                expect(schema[expr]).toEqual("boolean");
+            }
+
+            const results = await view.to_columns();
+            expect(results[expressions[0]]).toEqual(Array(5).fill(true));
+            expect(results[expressions[1]]).toEqual([
+                true,
+                true,
+                false,
+                false,
+                true,
+            ]);
+            expect(results[expressions[2]]).toEqual([
+                false,
+                false,
+                false,
+                true,
+                false,
+            ]);
+
+            await view.delete();
+            await table.delete();
+        });
+
+        it("Match string with string", async () => {
+            const table = await perspective.table({
+                a: ["ABC", "DEF", "cbA", "HIjK", "lMNoP"],
+                b: ["ABC", "ad", "asudfh", "HIjK", "lMNoP"],
+            });
+
+            const expressions = [
+                `match("a", 'ABC')`,
+                "match('abc', 'abc')",
+                `match("a", 'A')`,
+            ];
+
+            const view = await table.view({
+                expressions,
+            });
+
+            const schema = await view.expression_schema();
+
+            for (const expr of expressions) {
+                expect(schema[expr]).toEqual("boolean");
+            }
+
+            const results = await view.to_columns();
+            expect(results[expressions[0]]).toEqual([
+                true,
+                false,
+                false,
+                false,
+                false,
+            ]);
+            expect(results[expressions[1]]).toEqual(Array(5).fill(true));
+            expect(results[expressions[2]]).toEqual(Array(5).fill(false));
+
+            await view.delete();
+            await table.delete();
+        });
+
+        it("Find with string", async () => {
+            const table = await perspective.table({
+                a: ["ABC", "DEF", "cbA", "HIjK", "lMNoP"],
+                b: ["abc123", "abc567", "DEF56", "1234567", "AAA000"],
+            });
+
+            const expressions = [
+                `var x[2]; find("a", 'ABC', x)`,
+                `var x[2]; find("b", '.*', x)`,
+                `var x[2]; find("a", '[A-Za-z]{3}', x)`,
+                `var x[2]; find("b", '[A-Z]{3}', x)`,
+                `var x[2]; find("b", '[0-9]{7}', x)`,
+            ];
+
+            const view = await table.view({expressions});
+
+            const schema = await view.expression_schema();
+
+            for (const expr of expressions) {
+                expect(schema[expr]).toEqual("boolean");
+            }
+
+            const results = await view.to_columns();
+
+            expect(results[expressions[0]]).toEqual([
+                true,
+                false,
+                false,
+                false,
+                false,
+            ]);
+            expect(results[expressions[1]]).toEqual(Array(5).fill(true));
+            expect(results[expressions[2]]).toEqual([
+                true,
+                true,
+                true,
+                true,
+                true,
+            ]);
+            expect(results[expressions[3]]).toEqual([
+                false,
+                false,
+                true,
+                false,
+                true,
+            ]);
+            expect(results[expressions[4]]).toEqual([
+                false,
+                false,
+                false,
+                true,
+                false,
+            ]);
+
+            const expressions2 = [
+                `var x[2]; find("a", 'ABC', x); x[1]`,
+                `var x[2]; find("b", '.*', x); x[0]`,
+                `var x[2]; find("a", '[A-Za-z]{3}', x); x[1]`,
+                `var x[2]; find("b", '[A-Z]{3}', x); x[0]`,
+                `var x[2]; find("b", '[0-9]{7}', x); x[1]`,
+            ];
+
+            const view2 = await table.view({expressions: expressions2});
+
+            const schema2 = await view2.expression_schema();
+
+            for (const expr of expressions2) {
+                expect(schema2[expr]).toEqual("float");
+            }
+
+            const results2 = await view2.to_columns();
+
+            expect(results2[expressions2[0]]).toEqual([
+                2,
+                null,
+                null,
+                null,
+                null,
+            ]);
+            expect(results2[expressions2[1]]).toEqual(Array(5).fill(0));
+            expect(results2[expressions2[2]]).toEqual([2, 2, 2, 2, 2]);
+            expect(results2[expressions2[3]]).toEqual([null, null, 0, null, 0]);
+            expect(results2[expressions2[4]]).toEqual([
+                null,
+                null,
+                null,
+                6,
+                null,
+            ]);
+
+            await view2.delete();
+            await view.delete();
+            await table.delete();
+        });
+
+        it("Find edge cases", async () => {
+            const table = await perspective.table({
+                a: ["ab", "", "abcd", "dcab", "aaaaa"],
+            });
+
+            const expressions = [
+                `//start\nvar x[2]; find("a", '.*', x) ? x[0] : null`,
+                `//end\nvar x[2]; find("a", '.*', x) ? x[1] : null`,
+            ];
+
+            const view = await table.view({expressions});
+
+            const schema = await view.expression_schema();
+
+            expect(schema["start"]).toEqual("float");
+            expect(schema["end"]).toEqual("float");
+
+            const results = await view.to_columns();
+
+            // returns 0-indexed indices
+            expect(results["start"]).toEqual([0, 0, 0, 0, 0]);
+            expect(results["end"]).toEqual([1, 0, 3, 3, 4]);
+
+            await view.delete();
+            await table.delete();
+        });
+    });
 };

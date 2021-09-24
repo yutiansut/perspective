@@ -100,6 +100,12 @@ computed_function::to_string
     t_computed_expression_parser::TO_STRING_VALIDATOR_FN
     = computed_function::to_string(nullptr);
 
+computed_function::match t_computed_expression_parser::MATCH_FN
+    = computed_function::match();
+
+computed_function::find t_computed_expression_parser::FIND_FN
+    = computed_function::find();
+
 t_tscalar
 t_computed_expression_parser::TRUE_SCALAR = mktscalar(true);
 
@@ -132,6 +138,8 @@ t_computed_expression_parser::FALSE_SCALAR = mktscalar(false);
     sym_table.add_function("upper", upper_fn);                                 \
     sym_table.add_function("lower", lower_fn);                                 \
     sym_table.add_function("length", length_fn);                               \
+    sym_table.add_function("match", t_computed_expression_parser::MATCH_FN);   \
+    sym_table.add_function("find", t_computed_expression_parser::FIND_FN);     \
     sym_table.add_function("string", to_string_fn);                            \
     sym_table.add_reserved_function(                                           \
         "inrange", t_computed_expression_parser::INRANGE_FN);                  \
@@ -178,6 +186,8 @@ t_computed_expression_parser::FALSE_SCALAR = mktscalar(false);
         "lower", t_computed_expression_parser::LOWER_VALIDATOR_FN);            \
     sym_table.add_function(                                                    \
         "length", t_computed_expression_parser::LENGTH_VALIDATOR_FN);          \
+    sym_table.add_function("match", t_computed_expression_parser::MATCH_FN);   \
+    sym_table.add_function("find", t_computed_expression_parser::FIND_FN);     \
     sym_table.add_reserved_function(                                           \
         "inrange", t_computed_expression_parser::INRANGE_FN);                  \
     sym_table.add_reserved_function(                                           \

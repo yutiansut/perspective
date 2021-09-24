@@ -18,6 +18,7 @@
 #include <perspective/data_table.h>
 #include <perspective/exprtk.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 #include <type_traits>
 #include <date/date.h>
 #include <tsl/hopscotch_set.h>
@@ -31,6 +32,7 @@ namespace computed_function {
     typedef typename exprtk::igeneric_function<t_tscalar>::generic_type
         t_generic_type;
     typedef typename t_generic_type::scalar_view t_scalar_view;
+    typedef typename t_generic_type::vector_view t_vector_view;
     typedef typename t_generic_type::string_view t_string_view;
 
 #define STRING_FUNCTION_HEADER(NAME)                                           \
@@ -58,6 +60,17 @@ namespace computed_function {
     // Length of the string
     STRING_FUNCTION_HEADER(length)
 
+    STRING_FUNCTION_HEADER(search)
+
+    // split(string, substring, output_vector) - writes results into output_vector
+    // which can be accessed in the expression, but not returned into the column.
+    // calling split() returns a boolean stating whether the operation succeeded.
+    STRING_FUNCTION_HEADER(split)
+
+    // substr(string, start_idx, end_idx)
+    STRING_FUNCTION_HEADER(substr)
+
+
     /**
      * @brief Given a string column and 1...n string parameters, generate a
      * numeric column that will act as a custom sort order for the string
@@ -83,18 +96,31 @@ namespace computed_function {
         t_tscalar m_sentinel;
     };
 
-    /**
-     * @brief Given a string column and a non-regex string literal, check
-     * whether each row in the string column contains the string literal.
-     */
-    STRING_FUNCTION_HEADER(contains)
-
 #define FUNCTION_HEADER(NAME)                                                  \
     struct NAME : public exprtk::igeneric_function<t_tscalar> {                \
         NAME();                                                                \
         ~NAME();                                                               \
         t_tscalar operator()(t_parameter_list parameters);                     \
     };
+
+    /**
+     * @brief match(string, regex) => True if the entirety of the string
+     * matches regex, and False otherwise. Does not need a vocab as it
+     * does not write a string to the output column.
+     */
+    FUNCTION_HEADER(match)
+
+    /**
+     * @brief find(string, regex, vector) => True if any substring of string
+     * matches regex, False otherwise. A vector of size 2 or greater MUST be
+     * passed into the function in order to store the results.
+     * 
+     * Usage: 
+     * 
+     * var x[2]; // vector to hold results
+     * find("column", "abc", x) ? x[0] : null;
+     */
+    FUNCTION_HEADER(find)
 
     /**
      * @brief Return the hour of the day the date/datetime belongs to.

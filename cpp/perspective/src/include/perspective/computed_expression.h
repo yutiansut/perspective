@@ -129,23 +129,31 @@ public:
     // Applied to the parser
     static std::size_t PARSER_COMPILE_OPTIONS;
 
-    // Instances of Exprtk functions
+    // Datetime functions
     static computed_function::bucket BUCKET_FN;
     static computed_function::hour_of_day HOUR_OF_DAY_FN;
     static computed_function::day_of_week DAY_OF_WEEK_VALIDATOR_FN;
     static computed_function::month_of_year MONTH_OF_YEAR_VALIDATOR_FN;
+    
+    // String functions
     static computed_function::intern INTERN_VALIDATOR_FN;
     static computed_function::concat CONCAT_VALIDATOR_FN;
     static computed_function::order ORDER_VALIDATOR_FN;
     static computed_function::upper UPPER_VALIDATOR_FN;
     static computed_function::lower LOWER_VALIDATOR_FN;
     static computed_function::length LENGTH_VALIDATOR_FN;
+    static computed_function::match MATCH_FN;
+    static computed_function::find FIND_FN;
+
+    // Numeric functions
     static computed_function::percent_of PERCENT_OF_FN;
     static computed_function::inrange_fn INRANGE_FN;
     static computed_function::min_fn MIN_FN;
     static computed_function::max_fn MAX_FN;
     static computed_function::is_null IS_NULL_FN;
     static computed_function::is_not_null IS_NOT_NULL_FN;
+
+    // Type conversion functions
     static computed_function::to_string TO_STRING_VALIDATOR_FN;
     static computed_function::to_integer TO_INTEGER_FN;
     static computed_function::to_float TO_FLOAT_FN;

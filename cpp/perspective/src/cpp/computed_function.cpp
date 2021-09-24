@@ -407,6 +407,95 @@ namespace computed_function {
         return rval;
     }
 
+    match::match()
+        : exprtk::igeneric_function<t_tscalar>("TT") {}
+
+    match::~match() {}
+
+    t_tscalar match::operator()(t_parameter_list parameters) {
+        t_tscalar rval;
+        rval.clear();
+        rval.m_type = DTYPE_BOOL;
+
+        // Parameters already validated
+        t_scalar_view str_view(parameters[0]);
+        t_scalar_view substr_view(parameters[1]);
+
+        t_tscalar str = str_view();
+        t_tscalar substr = substr_view();
+
+        if (
+            (str.get_dtype() != DTYPE_STR || str.m_status == STATUS_CLEAR) ||
+            (substr.get_dtype() != DTYPE_STR || substr.m_status == STATUS_CLEAR)) {
+            rval.m_status = STATUS_CLEAR;
+            return rval;
+        }
+
+        if (!str.is_valid() || !substr.is_valid()) return rval;
+
+        boost::regex pattern(substr.to_string());
+        const std::string& search_string = str.to_string();
+
+        rval.set(boost::regex_match(search_string, pattern));
+
+        return rval;
+    }
+
+    find::find()
+        : exprtk::igeneric_function<t_tscalar>("TTV") {}
+
+    find::~find() {}
+
+    t_tscalar find::operator()(t_parameter_list parameters) {
+        t_tscalar rval;
+        rval.clear();
+        rval.m_type = DTYPE_BOOL;
+
+        // Parameters already validated for number and type
+        t_scalar_view _str(parameters[0]);
+        t_scalar_view _search_str(parameters[1]);
+        t_vector_view output_vector(parameters[2]);
+
+        t_tscalar str_scalar = _str();
+        t_tscalar search_str_scalar = _search_str();
+
+        // Type check - only allow strings and input vector of size > 0
+        if (
+            (str_scalar.get_dtype() != DTYPE_STR || str_scalar.m_status == STATUS_CLEAR) ||
+            (search_str_scalar.get_dtype() != DTYPE_STR || search_str_scalar.m_status == STATUS_CLEAR) ||
+            output_vector.size() < 2) {
+            rval.m_status = STATUS_CLEAR;
+            return rval;
+        }
+
+        // Inside actual execution, break if the value is null
+        if (!str_scalar.is_valid() || !search_str_scalar.is_valid()) return rval;
+
+        const std::string& str = str_scalar.to_string();
+        boost::regex pattern(search_str_scalar.to_string());
+        boost::match_results<std::string::const_iterator> results;
+
+        bool found = boost::regex_search(str, results, pattern, boost::match_default);
+
+        rval.set(found);
+
+        if (!found || results.empty()) {
+            output_vector[0] = mknone();
+            output_vector[1] = mknone();
+            return rval;
+        }
+        
+        double start = static_cast<double>(results.position());
+        double end = static_cast<double>(start + results.length() - 1);
+
+        if (end < 0) end = 0;
+
+        output_vector[0] = mktscalar(start);
+        output_vector[1] = mktscalar(end);
+
+        return rval;
+    }
+
     hour_of_day::hour_of_day()
         : exprtk::igeneric_function<t_tscalar>("T") {}
 

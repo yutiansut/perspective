@@ -1510,7 +1510,7 @@ export default function (Module) {
             // parameter and does not work if that param is interned. TODO:
             // this is clumsy and we should have a better way of handling it.
             parsed_expression_string = parsed_expression_string.replace(
-                /bucket\(.*?, (intern\(\'([smhDWMY])\'\))\)/g,
+                /bucket\(.*?, *(intern\(\'([smhDWMY])\'\))\)/g,
                 (match, full, value) => {
                     return `${match.substr(0, match.indexOf(full))}'${value}')`;
                 }
@@ -1559,7 +1559,10 @@ export default function (Module) {
      * // {'"Sales" + "Profit"': "float"}
      * console.log(results.expression_schema);
      *
-     * // {"invalid": "unknown token!", "1 + 'string'": "TypeError"}
+     * // {
+     * //   "invalid": {column: 0, line: 0, error_message: "unknown token!"},
+     * //   "1 + 'string'": {column: 0, line: 0, error_message: "Type Error"}
+     * // }
      * console.log(results.errors);
      */
     table.prototype.validate_expressions = function (
